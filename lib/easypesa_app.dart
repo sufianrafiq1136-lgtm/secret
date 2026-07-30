@@ -35,7 +35,7 @@ class AppAssets {
   static const profileAvatar = 'assets/images/profile_avatar.png';
   static const jazzCash = 'assets/brands/jazzcash.png';
   static const easypaisaWallet = 'assets/brands/easypaisa_wallet.png';
-  static const moneyBag = 'assets/icons/money_bag.png';
+  static const moneyBag = 'assets/icons/money_bag.jpg';
   static const sendMoney = 'assets/icons/send_money.png';
   static const billPayment = 'assets/icons/bill_payment.png';
   static const mobilePackages = 'assets/icons/mobile_packages.png';
@@ -1370,7 +1370,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
 
   final List<BankOption> _banks = const [
     BankOption(name: 'JazzCash', asset: AppAssets.jazzCashBankLogo, fallbackColor: AppColors.brandGreen),
-    BankOption(name: 'easypaisa Microfinance Bank', asset: AppAssets.easypisaBankLogo, fallbackColor: AppColors.brandGreen),
+    BankOption(name: 'Easypaisa  Bank', asset: AppAssets.easypisaBankLogo, fallbackColor: AppColors.brandGreen),
     BankOption(name: 'ABHI Microfinance Bank', asset: 'assets/banks/abhi.png', fallbackColor: Color(0xFF273A53)),
     BankOption(name: 'Al Baraka Islamic Bank Limited', asset: 'assets/banks/albaraka.png', fallbackColor: Color(0xFFEF4C6F)),
     BankOption(name: 'Alfa Pay', asset: 'assets/banks/alfapay.png', fallbackColor: Color(0xFFE8492E)),
@@ -1744,32 +1744,32 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                 children: [
                   const Text(
                     "Select Receiver's Details",
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 19.5.ui),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _RadioRow(
-                          selected: _selectedReceiverDetail == 0,
-                          label: 'Account Number',
-                          onTap: () => setState(() => _selectedReceiverDetail = 0),
-                        ),
-                      ),
-                      SizedBox(width: 18.ui),
-                      Expanded(
-                        child: _RadioRow(
-                          selected: _selectedReceiverDetail == 1,
-                          label: 'IBAN',
-                          onTap: () => setState(() => _selectedReceiverDetail = 1),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     Expanded(
+                  //       child: _RadioRow(
+                  //         selected: _selectedReceiverDetail == 0,
+                  //         label: 'Account Number',
+                  //         onTap: () => setState(() => _selectedReceiverDetail = 0),
+                  //       ),
+                  //     ),
+                  //     SizedBox(width: 18.ui),
+                  //     Expanded(
+                  //       child: _RadioRow(
+                  //         selected: _selectedReceiverDetail == 1,
+                  //         label: 'IBAN',
+                  //         onTap: () => setState(() => _selectedReceiverDetail = 1),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                   SizedBox(height: 43.5.ui),
                   const Text(
                     'Enter Account Number',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 12.ui),
                   Container(
@@ -1813,7 +1813,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                   SizedBox(height: 21.ui),
                   const Text(
                     'Enter Recipient Name',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 12.ui),
                   Container(
@@ -1858,7 +1858,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                   SizedBox(height: 21.ui),
                   const Text(
                     'Select Purpose of Payment',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 12.ui),
                   InkWell(
@@ -1877,7 +1877,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                           Expanded(
                             child: Text(
                               'Others',
-                              style: TextStyle(fontSize: 30, fontWeight: FontWeight.w400),
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
                             ),
                           ),
                           Icon(Icons.chevron_right_rounded, size: 33, color: Color(0xFF454054)),
@@ -1895,6 +1895,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                                 MaterialPageRoute<void>(
                                   builder: (_) => AmountEntryScreen(
                                     bankName: widget.bankName,
+                                    logoAsset: widget.logoAsset,
                                     accountNumber: _accountController.text.trim(),
                                     recipientName: _recipientNameController.text.trim(),
                                   ),
@@ -1968,7 +1969,7 @@ class _RadioRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -1981,11 +1982,13 @@ class AmountEntryScreen extends StatefulWidget {
   const AmountEntryScreen({
     super.key,
     required this.bankName,
+    required this.logoAsset,
     required this.accountNumber,
     required this.recipientName,
   });
 
   final String bankName;
+  final String logoAsset;
   final String accountNumber;
   final String recipientName;
 
@@ -1994,28 +1997,21 @@ class AmountEntryScreen extends StatefulWidget {
 }
 
 class _AmountEntryScreenState extends State<AmountEntryScreen> {
-  String _digits = '0';
+  late final TextEditingController _amountController;
 
-  int get _amount => int.tryParse(_digits) ?? 0;
+  int get _amount => int.tryParse(_amountController.text) ?? 0;
 
-  void _appendDigit(String digit) {
-    setState(() {
-      if (_digits == '0') {
-        _digits = digit;
-      } else {
-        _digits += digit;
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController(text: '0');
+    _amountController.selection = const TextSelection(baseOffset: 0, extentOffset: 1);
   }
 
-  void _backspace() {
-    setState(() {
-      if (_digits.length <= 1) {
-        _digits = '0';
-      } else {
-        _digits = _digits.substring(0, _digits.length - 1);
-      }
-    });
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
@@ -2032,7 +2028,7 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
             ),
             Container(
               width: double.infinity,
-              color: const Color(0xFFF3FBF4),
+              color: const Color.fromARGB(255, 251, 254, 252),
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 34),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2040,8 +2036,8 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                   const Text(
                     'Sending to Bank Account',
                     style: TextStyle(
-                      color: Color(0xFF4B4218),
-                      fontSize: 24,
+                      color: Color.fromARGB(255, 37, 37, 37),
+                      fontSize: 21,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -2049,10 +2045,10 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                   Row(
                     children: [
                       BankLogo(
-                        name: 'Jazz Cash',
-                        asset: AppAssets.jazzCash,
+                        name: widget.bankName,
+                        asset: widget.logoAsset,
                         fallbackColor: AppColors.brandGreen,
-                        size: 110,
+                        size: 70,
                         circle: true,
                       ),
                       const SizedBox(width: 18),
@@ -2062,18 +2058,25 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                           children: [
                             Row(
                               children: [
-                                const Text(
-                                  'Sufi',
-                                  style: TextStyle(fontSize: 33, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                                Flexible(
+                                  child: Text(
+                                    widget.bankName,
+                                    style: const TextStyle(
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
-                                const Icon(Icons.account_balance_outlined, color: AppColors.brandGreen, size: 38),
+                                const Icon(Icons.account_balance_outlined, color: AppColors.brandGreen, size: 21),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
                               widget.accountNumber,
-                              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w600, color: Colors.black),
+                              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w500, color: Colors.black),
                             ),
                           ],
                         ),
@@ -2084,27 +2087,52 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
               ),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  const SizedBox(height: 34),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        'Enter Amount',
-                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
-                      ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Enter Amount',
+                      style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  const Spacer(),
-                  _AmountDisplay(amount: _amount),
-                  const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SizedBox(
+                    const SizedBox(height: 54),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Rs. ',
+                          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 14, 13, 15)),
+                        ),
+                        SizedBox(
+                          width: 230,
+                          child: TextField(
+                            controller: _amountController,
+                            autofocus: true,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            onChanged: (_) => setState(() {}),
+                            textAlign: TextAlign.center,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: const TextStyle(
+                              fontSize: 54,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 62),
+                    SizedBox(
                       width: double.infinity,
-                      height: 72,
+                      height: 52,
                       child: FilledButton(
                         onPressed: _amount > 0
                             ? () {
@@ -2124,160 +2152,14 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                           disabledBackgroundColor: const Color(0xFFD9DDE1),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36)),
                         ),
-                        child: const Text('Next', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500)),
+                        child: const Text('Next', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    color: const Color(0xFFD8DBE1),
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 18),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(child: _KeypadKey(label: '1', onTap: () => _appendDigit('1'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '2\nABC', onTap: () => _appendDigit('2'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '3\nDEF', onTap: () => _appendDigit('3'))),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(child: _KeypadKey(label: '4\nGHI', onTap: () => _appendDigit('4'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '5\nJKL', onTap: () => _appendDigit('5'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '6\nMNO', onTap: () => _appendDigit('6'))),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Expanded(child: _KeypadKey(label: '7\nPQRS', onTap: () => _appendDigit('7'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '8\nTUV', onTap: () => _appendDigit('8'))),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '9\nWXYZ', onTap: () => _appendDigit('9'))),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 116,
-                              child: IconButton(
-                                onPressed: () {},
-                                icon: const Icon(Icons.language_rounded, size: 40, color: Color(0xFF636672)),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(child: _KeypadKey(label: '0', onTap: () => _appendDigit('0'))),
-                            const SizedBox(width: 10),
-                            SizedBox(
-                              width: 116,
-                              child: IconButton(
-                                onPressed: _backspace,
-                                icon: const Icon(Icons.backspace_outlined, size: 38, color: Color(0xFF222222)),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AmountDisplay extends StatelessWidget {
-  const _AmountDisplay({required this.amount});
-
-  final int amount;
-
-  @override
-  Widget build(BuildContext context) {
-    final amountText = amount.toString();
-    return Center(
-      child: RichText(
-        text: TextSpan(
-          children: [
-            const TextSpan(
-              text: 'Rs. ',
-              style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-            ),
-            TextSpan(
-              text: amountText,
-              style: const TextStyle(fontSize: 118, fontWeight: FontWeight.w700, color: Colors.black, height: 1),
-            ),
-            const TextSpan(
-              text: '.00',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: Colors.black, height: 1.15),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _KeypadKey extends StatelessWidget {
-  const _KeypadKey({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final lines = label.split('\n');
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(10),
-        onTap: onTap,
-        child: Container(
-          height: 78,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: const [
-              BoxShadow(color: Color(0x22000000), blurRadius: 0, offset: Offset(0, 1)),
-            ],
-          ),
-          child: Center(
-            child: lines.length == 1
-                ? Text(
-                    lines.first,
-                    style: const TextStyle(fontSize: 44, fontWeight: FontWeight.w400, height: 1),
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(lines.first, style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w400, height: 1)),
-                      const SizedBox(height: 2),
-                      Text(
-                        lines.last,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 2.2,
-                          height: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
         ),
       ),
     );
@@ -2318,7 +2200,7 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
         padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
         children: [
           const Text('Pay From', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           _ReviewCard(
             child: Row(
               children: [
@@ -2329,18 +2211,18 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
                   size: 44,
                   circle: true,
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 10),
                 const Expanded(
                   child: Text.rich(
                     TextSpan(
                       children: [
                         TextSpan(
                           text: 'easypaisa Account:\n',
-                          style: TextStyle(fontSize: 24, color: AppColors.textPrimary),
+                          style: TextStyle(fontSize: 23, color: AppColors.textPrimary),
                         ),
                         TextSpan(
-                          text: 'Balance Rs. 10.44',
-                          style: TextStyle(fontSize: 25, color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                          text: 'Balance Rs. 25000.44',
+                          style: TextStyle(fontSize: 24, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -2349,16 +2231,16 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
           const Text('Pay To', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
           const SizedBox(height: 14),
           _ReviewCard(
             child: Column(
               children: [
                 _ReviewRow(label: 'Account Title', value: widget.recipientName),
-                const SizedBox(height: 28),
+                const SizedBox(height: 14),
                 _ReviewRow(label: 'Account Number', value: widget.accountNumber),
-                const SizedBox(height: 28),
+                const SizedBox(height: 14),
                 _ReviewRow(label: 'IBAN', value: 'PK41JCMA0604923191981267'),
               ],
             ),
@@ -2486,6 +2368,7 @@ class _ReviewRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
+          flex: 2,
           child: Text(
             label,
             style: labelStyle ??
@@ -2496,9 +2379,12 @@ class _ReviewRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 3,
           child: Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.right,
             style: valueStyle ??
                 const TextStyle(

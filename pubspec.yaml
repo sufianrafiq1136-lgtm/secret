@@ -60,6 +60,7 @@ flutter:
   # Put screenshots, icons, logos, and bank artwork under assets/.
   assets:
     - assets/
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
