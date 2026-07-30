@@ -2231,30 +2231,44 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30),
           const Text('Pay To', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _ReviewCard(
             child: Column(
               children: [
-                _ReviewRow(label: 'Account Title', value: widget.recipientName),
-                const SizedBox(height: 14),
-                _ReviewRow(label: 'Account Number', value: widget.accountNumber),
-                const SizedBox(height: 14),
-                _ReviewRow(label: 'IBAN', value: 'PK41JCMA0604923191981267'),
+                _ReviewRow(
+                  label: 'Account Title',
+                  value: widget.recipientName,
+                ),
+                const SizedBox(height: 24),
+                _ReviewRow(
+                  label: 'Account Number',
+                  value: widget.accountNumber,
+                ),
+                const SizedBox(height: 24),
+                _ReviewRow(
+                  label: 'IBAN',
+                  value: 'PK41JCMA0604923191981267',
+                  valueStyle: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(height: 32),
           const Text('Payment Summary', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           _ReviewCard(
             child: Column(
               children: [
                 _ReviewRow(label: 'Transfer Amount', value: 'Rs. ${widget.amount.toStringAsFixed(0)}'),
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
                 _ReviewRow(label: 'Fee (including tax)', value: 'Free'),
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
                 _ReviewRow(
                   label: 'Total Amount',
                   value: 'Rs. ${widget.amount.toStringAsFixed(2)}',
@@ -2279,7 +2293,7 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.info, color: Color(0xFF3F3E52), size: 34),
+                Icon(Icons.info, color: Color(0xFF3F3E52), size: 24),
                 SizedBox(width: 16),
                 Expanded(
                   child: Text(
