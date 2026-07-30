@@ -2367,8 +2367,8 @@ class _ReviewRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 2,
+        Flexible(
+          fit: FlexFit.loose,
           child: Text(
             label,
             style: labelStyle ??
@@ -2380,7 +2380,6 @@ class _ReviewRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          flex: 3,
           child: Text(
             value,
             maxLines: 1,
