@@ -2909,12 +2909,35 @@ class _SuccessActionRow extends StatelessWidget {
   }
 }
 
+String _formatReceiptDateTime(DateTime dateTime) {
+  const monthNames = <String>[
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+  return '${dateTime.day} ${monthNames[dateTime.month - 1]} ${dateTime.year} '
+      '${hour.toString().padLeft(2, '0')}:$minute $period';
+}
+
 Future<void> showReceiptDialog(
   BuildContext context, {
   required double amount,
   required String recipientName,
   required String recipientAccount,
 }) {
+  final receiptDateTime = _formatReceiptDateTime(DateTime.now());
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -2963,9 +2986,9 @@ Future<void> showReceiptDialog(
                         ),
                       ),
                       const SizedBox(height: 36),
-                      const Text(
-                        '19 June 2026 02:05 PM',
-                        style: TextStyle(fontSize: 22, color: Color(0xFF9A9A9A)),
+                      Text(
+                        receiptDateTime,
+                        style: const TextStyle(fontSize: 22, color: Color(0xFF9A9A9A)),
                       ),
                       const SizedBox(height: 10),
                       const Text(
