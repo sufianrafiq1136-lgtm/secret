@@ -30,6 +30,8 @@ class AppAssets {
   static const digitalBankLogo = 'assets/logos/digital_bank_logo.png';
   static const easypaisaLogo = 'assets/logos/easypaisa_logo.png';
   static const easypaisaWordmark = 'assets/logos/easypaisa_wordmark.png';
+  static const jazzCashBankLogo = 'assets/icons/jazzCash bank logo.jpg';
+  static const easypisaBankLogo = 'assets/icons/easypisa bank logo.jpg';
   static const profileAvatar = 'assets/images/profile_avatar.png';
   static const jazzCash = 'assets/brands/jazzcash.png';
   static const easypaisaWallet = 'assets/brands/easypaisa_wallet.png';
@@ -1367,6 +1369,8 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
   late final TabController _tabController;
 
   final List<BankOption> _banks = const [
+    BankOption(name: 'JazzCash', asset: AppAssets.jazzCashBankLogo, fallbackColor: AppColors.brandGreen),
+    BankOption(name: 'easypaisa Microfinance Bank', asset: AppAssets.easypisaBankLogo, fallbackColor: AppColors.brandGreen),
     BankOption(name: 'ABHI Microfinance Bank', asset: 'assets/banks/abhi.png', fallbackColor: Color(0xFF273A53)),
     BankOption(name: 'Al Baraka Islamic Bank Limited', asset: 'assets/banks/albaraka.png', fallbackColor: Color(0xFFEF4C6F)),
     BankOption(name: 'Alfa Pay', asset: 'assets/banks/alfapay.png', fallbackColor: Color(0xFFE8492E)),
@@ -1376,7 +1380,6 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
     BankOption(name: 'Bank Al Habib Limited', asset: 'assets/banks/bank_al_habib.png', fallbackColor: Color(0xFF20794F)),
     BankOption(name: 'Bank Alfalah', asset: 'assets/banks/bank_alfalah.png', fallbackColor: Color(0xFFF3683B)),
     BankOption(name: 'BankIslami', asset: 'assets/banks/bankislami.png', fallbackColor: Color(0xFF0D7F4F)),
-    BankOption(name: 'Jazz Cash', asset: AppAssets.jazzCash, fallbackColor: AppColors.brandGreen),
   ];
 
   @override
@@ -1499,21 +1502,21 @@ class BankTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 7.5.ui, vertical: 13.5.ui),
+        padding: EdgeInsets.symmetric(horizontal: 7.5.ui, vertical: 22.ui),
         child: Row(
           children: [
             BankLogo(
               name: bank.name,
               asset: bank.asset,
               fallbackColor: bank.fallbackColor,
-              size: 43.5.ui,
+              size: 80.ui,
             ),
             SizedBox(width: 15.ui),
             Expanded(
               child: Text(
                 bank.name,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 19,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
                 ),
