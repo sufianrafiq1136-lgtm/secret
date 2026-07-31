@@ -332,28 +332,39 @@ class _AppShellState extends State<AppShell> {
 }
 
 void showSendMoneySheet(BuildContext context) {
-  showModalBottomSheet<void>(
+  showDialog<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (sheetContext) {
-      return SendMoneySheet(
-        onBankTransfer: () {
-          final navigator = Navigator.of(context);
-          Navigator.of(sheetContext).pop();
-          navigator.push(
-            MaterialPageRoute<void>(builder: (_) => const BankTransferScreen()),
-          );
-        },
-        onPlaceholder: (title) {
-          final navigator = Navigator.of(context);
-          Navigator.of(sheetContext).pop();
-          navigator.push(
-            MaterialPageRoute<void>(
-              builder: (_) => ComingSoonScreen(title: title),
-            ),
-          );
-        },
+    barrierDismissible: true,
+    barrierColor: Colors.black54,
+    builder: (dialogContext) {
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.92,
+          height: MediaQuery.of(context).size.height * 0.374,
+          child: SendMoneySheet(
+            onBankTransfer: () {
+              final navigator = Navigator.of(context);
+              Navigator.of(dialogContext).pop();
+              navigator.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const BankTransferScreen(),
+                ),
+              );
+            },
+            onPlaceholder: (title) {
+              final navigator = Navigator.of(context);
+              Navigator.of(dialogContext).pop();
+              navigator.push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ComingSoonScreen(title: title),
+                ),
+              );
+            },
+          ),
+        ),
       );
     },
   );
@@ -1418,29 +1429,16 @@ class SendMoneySheet extends StatelessWidget {
     ];
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.68,
-      ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: BorderRadius.all(Radius.circular(30)),
       ),
       child: SafeArea(
-        top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 22),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 46,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E2E6),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 18),
               const Text(
                 'Send Money To',
                 style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
@@ -1525,7 +1523,7 @@ class _SheetActionCard extends StatelessWidget {
                   child: AssetOrIcon(
                     asset: asset,
                     fallbackIcon: fallbackIcon,
-                    size: 40.5.ui,
+                    size: 50.625.ui,
                     color: color,
                   ),
                 ),
