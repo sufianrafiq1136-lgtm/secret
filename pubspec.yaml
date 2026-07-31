@@ -65,6 +65,7 @@ flutter:
   assets:
     - assets/
     - assets/icons/
+    - assets/logos/
     - assets/logos/easypaisa.jpg
     - assets/logos/Header digital bank logo .png
  

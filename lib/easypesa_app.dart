@@ -46,12 +46,13 @@ class AppAssets {
   static const sendMoney = 'assets/icons/Send Money icon.png';
   static const billPayment = 'assets/icons/Bill Payment.png';
   static const mobilePackages = 'assets/icons/Mobile Packages .png';
-  static const easypaisaTransfer = 'assets/icons/easypaisa_transfer.png';
-  static const bankTransfer = 'assets/icons/bank_transfer.png';
-  static const cnicTransfer = 'assets/icons/cnic_transfer.png';
-  static const raast = 'assets/icons/raast.png';
+  static const easypaisaTransfer = 'assets/icons/easy paisa trasfer.png';
+  static const bankTransfer = 'assets/icons/Bank trasfer.png';
+  static const cnicTransfer = 'assets/icons/CNIC Tranfer.png';
+  static const raast = 'assets/icons/Raast transfer.png';
   static const wallet = 'assets/icons/wallet.png';
-  static const scanQr = 'assets/icons/scan_qr.png';
+  static const otherWallets = 'assets/icons/Other wallets.png';
+  static const scanQr = 'assets/icons/Scan QR.png';
   static const quickCard = 'assets/icons/quick_card.png';
   static const onlineCard = 'assets/icons/online_card.png';
   static const plasticCard = 'assets/icons/plastic_card.png';
@@ -67,6 +68,26 @@ class AppAssets {
   static const insuranceMarketplace = 'assets/icons/Insurance Marketplace.png';
   static const mTag = 'assets/icons/M-Tag.png';
   static const rsOneGame = 'assets/icons/Rs .1 Game.png';
+  static const abhiMicrofinanceBank =
+      'assets/logos/abhli micro finance bank.png';
+  static const alBarakaIslamicBank = 'assets/logos/Al Baraka islami Bank.jpg';
+  static const alfaPay = 'assets/logos/Alfhpla pay.png';
+  static const alliedBank = 'assets/logos/allied bank limited logo.jpg';
+  static const apnaMicrofinanceBank = 'assets/logos/Apna microfinance bank.jpg';
+  static const askariBank = 'assets/logos/Askri bank limited.png';
+  static const bankAlHabib = 'assets/logos/Bank Al Habib.jpg';
+  static const bankIslami = 'assets/logos/Bank al islami.png';
+  static const bankAlfalah = 'assets/logos/Bank Alflah.png';
+  static const uMicrofinanceBank = 'assets/logos/u bank.jpg';
+  static const habibBank = 'assets/logos/HBL.png';
+  static const habibMetropolitanBank =
+      'assets/logos/habib metropolin limited.jpg';
+  static const mcbBank = 'assets/logos/MCB_Bank_Limited_logo.jpg';
+  static const mcbIslamicBank = 'assets/logos/mcb islamic bank.png';
+  static const meezanBank = 'assets/logos/Meezan bank.png';
+  static const unitedBank = 'assets/logos/ubl digital.png';
+  static const nationalBank = 'assets/logos/NBP-Logo.png';
+  static const jsBank = 'assets/logos/js bank.png';
 }
 
 String formatRs(double value) => value.toStringAsFixed(2);
@@ -1382,7 +1403,7 @@ class SendMoneySheet extends StatelessWidget {
       ),
       _SheetOption(
         'Other\nWallets',
-        AppAssets.wallet,
+        AppAssets.otherWallets,
         Icons.account_balance_wallet_outlined,
         AppColors.textPrimary,
         () => onPlaceholder('Other Wallets'),
@@ -1553,48 +1574,93 @@ class _BankTransferScreenState extends State<BankTransferScreen>
     ),
     BankOption(
       name: 'ABHI Microfinance Bank',
-      asset: 'assets/banks/abhi.png',
+      asset: AppAssets.abhiMicrofinanceBank,
       fallbackColor: Color(0xFF273A53),
     ),
     BankOption(
       name: 'Al Baraka Islamic Bank Limited',
-      asset: 'assets/banks/albaraka.png',
+      asset: AppAssets.alBarakaIslamicBank,
       fallbackColor: Color(0xFFEF4C6F),
     ),
     BankOption(
       name: 'Alfa Pay',
-      asset: 'assets/banks/alfapay.png',
+      asset: AppAssets.alfaPay,
       fallbackColor: Color(0xFFE8492E),
     ),
     BankOption(
       name: 'Allied Bank Limited',
-      asset: 'assets/banks/allied.png',
+      asset: AppAssets.alliedBank,
       fallbackColor: Color(0xFF3474C6),
     ),
     BankOption(
       name: 'Apna Microfinance Bank',
-      asset: 'assets/banks/apna.png',
+      asset: AppAssets.apnaMicrofinanceBank,
       fallbackColor: Color(0xFF7DAD2C),
     ),
     BankOption(
       name: 'Askari Commercial Bank Limited',
-      asset: 'assets/banks/askari.png',
+      asset: AppAssets.askariBank,
       fallbackColor: Color(0xFF2C8BC8),
     ),
     BankOption(
       name: 'Bank Al Habib Limited',
-      asset: 'assets/banks/bank_al_habib.png',
+      asset: AppAssets.bankAlHabib,
       fallbackColor: Color(0xFF20794F),
     ),
     BankOption(
       name: 'Bank Alfalah',
-      asset: 'assets/banks/bank_alfalah.png',
+      asset: AppAssets.bankAlfalah,
       fallbackColor: Color(0xFFF3683B),
     ),
     BankOption(
       name: 'BankIslami',
-      asset: 'assets/banks/bankislami.png',
+      asset: AppAssets.bankIslami,
       fallbackColor: Color(0xFF0D7F4F),
+    ),
+    BankOption(
+      name: 'U Microfinance Bank',
+      asset: AppAssets.uMicrofinanceBank,
+      fallbackColor: Color(0xFF1D6C91),
+    ),
+    BankOption(
+      name: 'Habib Bank Limited (HBL)',
+      asset: AppAssets.habibBank,
+      fallbackColor: Color(0xFF0A5B9A),
+    ),
+    BankOption(
+      name: 'Habib Metropolitan Bank Limited',
+      asset: AppAssets.habibMetropolitanBank,
+      fallbackColor: Color(0xFF1E3A8A),
+    ),
+    BankOption(
+      name: 'MCB Bank Limited',
+      asset: AppAssets.mcbBank,
+      fallbackColor: Color(0xFF00529B),
+    ),
+    BankOption(
+      name: 'MCB Islamic Bank Limited',
+      asset: AppAssets.mcbIslamicBank,
+      fallbackColor: Color(0xFF008B62),
+    ),
+    BankOption(
+      name: 'Meezan Bank Limited',
+      asset: AppAssets.meezanBank,
+      fallbackColor: Color(0xFF008B62),
+    ),
+    BankOption(
+      name: 'United Bank Limited (UBL)',
+      asset: AppAssets.unitedBank,
+      fallbackColor: Color(0xFF008A5B),
+    ),
+    BankOption(
+      name: 'National Bank of Pakistan (NBP)',
+      asset: AppAssets.nationalBank,
+      fallbackColor: Color(0xFF005B4F),
+    ),
+    BankOption(
+      name: 'JS Bank Limited',
+      asset: AppAssets.jsBank,
+      fallbackColor: Color(0xFF1E3A8A),
     ),
   ];
 
