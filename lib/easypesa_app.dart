@@ -132,14 +132,20 @@ class EasyPesaApp extends StatelessWidget {
           scaffoldBackgroundColor: AppColors.background,
           fontFamily: 'Roboto',
           visualDensity: VisualDensity.compact,
-          iconTheme: IconThemeData(color: AppColors.textPrimary, size: AppScale.v(22)),
+          iconTheme: IconThemeData(
+            color: AppColors.textPrimary,
+            size: AppScale.v(22),
+          ),
           colorScheme: ColorScheme.fromSeed(seedColor: AppColors.brandGreen),
           appBarTheme: AppBarTheme(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
             elevation: 0,
             centerTitle: true,
-            iconTheme: IconThemeData(color: AppColors.textPrimary, size: AppScale.v(22)),
+            iconTheme: IconThemeData(
+              color: AppColors.textPrimary,
+              size: AppScale.v(22),
+            ),
             titleTextStyle: TextStyle(
               color: AppColors.textPrimary,
               fontSize: AppScale.v(22),
@@ -189,8 +195,13 @@ class _AppShellState extends State<AppShell> {
       barrierColor: Colors.black54,
       builder: (dialogContext) {
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 64),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: 64,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(32),
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 28),
             child: Column(
@@ -211,7 +222,11 @@ class _AppShellState extends State<AppShell> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.qr_code_2_rounded, color: Colors.white, size: 54),
+                  child: const Icon(
+                    Icons.qr_code_2_rounded,
+                    color: Colors.white,
+                    size: 54,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -222,7 +237,10 @@ class _AppShellState extends State<AppShell> {
                 const Text(
                   'This can be wired to the live scanner flow next.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
@@ -230,7 +248,9 @@ class _AppShellState extends State<AppShell> {
                     backgroundColor: AppColors.brandGreen,
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                   ),
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Close'),
@@ -267,9 +287,7 @@ class _AppShellState extends State<AppShell> {
 
   void _openPlaceholder(String title) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ComingSoonScreen(title: title),
-      ),
+      MaterialPageRoute<void>(builder: (_) => ComingSoonScreen(title: title)),
     );
   }
 }
@@ -285,9 +303,7 @@ void showSendMoneySheet(BuildContext context) {
           final navigator = Navigator.of(context);
           Navigator.of(sheetContext).pop();
           navigator.push(
-            MaterialPageRoute<void>(
-              builder: (_) => const BankTransferScreen(),
-            ),
+            MaterialPageRoute<void>(builder: (_) => const BankTransferScreen()),
           );
         },
         onPlaceholder: (title) {
@@ -332,11 +348,43 @@ class EasyPesaBottomNav extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: _NavItem(index: 0, selectedIndex: selectedIndex, label: 'Home', icon: Icons.home_rounded, onTap: onTap)),
-                    Expanded(child: _NavItem(index: 1, selectedIndex: selectedIndex, label: 'Cash Points', icon: Icons.location_on_outlined, onTap: onTap)),
+                    Expanded(
+                      child: _NavItem(
+                        index: 0,
+                        selectedIndex: selectedIndex,
+                        label: 'Home',
+                        icon: Icons.home_rounded,
+                        onTap: onTap,
+                      ),
+                    ),
+                    Expanded(
+                      child: _NavItem(
+                        index: 1,
+                        selectedIndex: selectedIndex,
+                        label: 'Cash Points',
+                        icon: Icons.location_on_outlined,
+                        onTap: onTap,
+                      ),
+                    ),
                     SizedBox(width: 54.ui),
-                    Expanded(child: _NavItem(index: 3, selectedIndex: selectedIndex, label: 'Promotions', icon: Icons.campaign_outlined, onTap: onTap)),
-                    Expanded(child: _NavItem(index: 4, selectedIndex: selectedIndex, label: 'My Account', icon: Icons.person_outline_rounded, onTap: onTap)),
+                    Expanded(
+                      child: _NavItem(
+                        index: 3,
+                        selectedIndex: selectedIndex,
+                        label: 'Promotions',
+                        icon: Icons.campaign_outlined,
+                        onTap: onTap,
+                      ),
+                    ),
+                    Expanded(
+                      child: _NavItem(
+                        index: 4,
+                        selectedIndex: selectedIndex,
+                        label: 'My Account',
+                        icon: Icons.person_outline_rounded,
+                        onTap: onTap,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -358,7 +406,11 @@ class EasyPesaBottomNav extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(Icons.qr_code_2_rounded, color: Colors.white, size: 25.5.ui),
+                    child: Icon(
+                      Icons.qr_code_2_rounded,
+                      color: Colors.white,
+                      size: 25.5.ui,
+                    ),
                   ),
                 ),
               ),
@@ -450,190 +502,203 @@ class HomeScreen extends StatelessWidget {
           key: const PageStorageKey<String>('home-page'),
           padding: EdgeInsets.only(bottom: 112.ui),
           children: [
-          _HomeHeaderCluster(
-            onSearch: () => onOpenPlaceholder('Search'),
-            onNotifications: () => onOpenPlaceholder('Notifications'),
-            onSignIn: onSendMoney,
-          ),
-          SizedBox(height: 18.ui),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.ui),
-            child: Row(
-              children: [
-                Expanded(
-                  child: QuickActionCard(
-                    title: 'Send Money',
-                    asset: AppAssets.sendMoney,
-                    fallbackIcon: Icons.send_outlined,
-                    onTap: onSendMoney,
-                  ),
-                ),
-                SizedBox(width: 16.ui),
-                Expanded(
-                  child: QuickActionCard(
-                    title: 'Bill Payment',
-                    asset: AppAssets.billPayment,
-                    fallbackIcon: Icons.receipt_long_outlined,
-                    onTap: () => onOpenPlaceholder('Bill Payment'),
-                  ),
-                ),
-                SizedBox(width: 16.ui),
-                Expanded(
-                  child: QuickActionCard(
-                    title: 'Mobile\nPackages',
-                    asset: AppAssets.mobilePackages,
-                    fallbackIcon: Icons.phone_iphone_outlined,
-                    onTap: () => onOpenPlaceholder('Mobile Packages'),
-                  ),
-                ),
-              ],
+            _HomeHeaderCluster(
+              onSearch: () => onOpenPlaceholder('Search'),
+              onNotifications: () => onOpenPlaceholder('Notifications'),
+              onSignIn: onSendMoney,
             ),
-          ),
-          SizedBox(height: 20.ui),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.ui),
-            child: const Text(
-              'More with easypaisa',
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, letterSpacing: -0.2),
-            ),
-          ),
-          SizedBox(height: 12.ui),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.ui),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(32.ui),
-                boxShadow: const [
-                  BoxShadow(color: AppColors.shadow, blurRadius: 26, offset: Offset(0, 10)),
-                ],
-              ),
-              padding: EdgeInsets.fromLTRB(12.ui, 16.ui, 12.ui, 14.ui),
-              child: Column(
-                children: [
-                  GridView.count(
-                    crossAxisCount: 4,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 8,
-                    childAspectRatio: 0.92,
-                    children: [
-                      FeatureTile(
-                        title: 'Easyload',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.add_card_outlined,
-                        onTap: () => onOpenPlaceholder('Easyload'),
-                      ),
-                      FeatureTile(
-                        title: 'Easycash\nLoan',
-                        asset: AppAssets.wallet,
-                        fallbackIcon: Icons.volunteer_activism_outlined,
-                        onTap: () => onOpenPlaceholder('Easycash Loan'),
-                      ),
-                      FeatureTile(
-                        title: 'Savings\nPocket',
-                        asset: AppAssets.walletIcon,
-                        fallbackIcon: Icons.savings_outlined,
-                        onTap: () => onOpenPlaceholder('Savings Pocket'),
-                      ),
-                      FeatureTile(
-                        title: 'Invite\n& Earn',
-                        asset: AppAssets.sendMoney,
-                        fallbackIcon: Icons.people_outline_rounded,
-                        onTap: () => onOpenPlaceholder('Invite & Earn'),
-                      ),
-                      FeatureTile(
-                        title: 'Donations',
-                        asset: AppAssets.wallet,
-                        fallbackIcon: Icons.volunteer_activism_outlined,
-                        onTap: () => onOpenPlaceholder('Donations'),
-                      ),
-                      FeatureTile(
-                        title: 'Term\nDeposit',
-                        asset: AppAssets.walletIcon,
-                        fallbackIcon: Icons.account_balance_wallet_outlined,
-                        onTap: () => onOpenPlaceholder('Term Deposit'),
-                      ),
-                      FeatureTile(
-                        title: 'Daily\nRewards',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.card_giftcard_outlined,
-                        onTap: () => onOpenPlaceholder('Daily Rewards'),
-                      ),
-                      FeatureTile(
-                        title: 'Buy Now\nPay Later',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.calendar_month_outlined,
-                        onTap: () => onOpenPlaceholder('Buy Now Pay Later'),
-                      ),
-                      FeatureTile(
-                        title: 'Insurance\nMarketplace',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.umbrella_outlined,
-                        onTap: () => onOpenPlaceholder('Insurance Marketplace'),
-                      ),
-                      FeatureTile(
-                        title: 'M-Tag',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.route_outlined,
-                        onTap: () => onOpenPlaceholder('M-Tag'),
-                      ),
-                      FeatureTile(
-                        title: 'Rs.1 Game',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.celebration_outlined,
-                        onTap: () => onOpenPlaceholder('Rs.1 Game'),
-                      ),
-                      FeatureTile(
-                        title: 'See All',
-                        asset: AppAssets.quickCard,
-                        fallbackIcon: Icons.more_horiz_rounded,
-                        onTap: () => onOpenPlaceholder('More services'),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10.ui),
-                  const _DotsIndicator(activeIndex: 0, count: 2),
-                ],
-              ),
-            ),
-          ),
-          SizedBox(height: 22.ui),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.ui),
-            child: const Text(
-              'Get your easypaisa Debit Card',
-              style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700, letterSpacing: -0.2),
-            ),
-          ),
-          SizedBox(height: 12.ui),
-          SizedBox(
-            height: 196.ui,
-            child: ListView(
+            SizedBox(height: 18.ui),
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              scrollDirection: Axis.horizontal,
-              children: [
-                DebitCardTile(
-                  title: 'Online Card',
-                  subtitle: 'Only for Online\nPayments in Pakistan',
-                  backgroundColor: const Color(0xFF438E83),
-                  accentColor: const Color(0xFFF9D780),
-                  asset: AppAssets.onlineCard,
-                  onTap: () => onOpenPlaceholder('Online Card'),
-                ),
-                SizedBox(width: 18.ui),
-                DebitCardTile(
-                  title: 'Plastic Card',
-                  subtitle: 'Use at any ATM or\nShop in Pakistan',
-                  backgroundColor: const Color(0xFF3C3D4D),
-                  accentColor: const Color(0xFFF9D780),
-                  asset: AppAssets.plasticCard,
-                  onTap: () => onOpenPlaceholder('Plastic Card'),
-                ),
-              ],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: QuickActionCard(
+                      title: 'Send Money',
+                      asset: AppAssets.sendMoney,
+                      fallbackIcon: Icons.send_outlined,
+                      onTap: onSendMoney,
+                    ),
+                  ),
+                  SizedBox(width: 16.ui),
+                  Expanded(
+                    child: QuickActionCard(
+                      title: 'Bill Payment',
+                      asset: AppAssets.billPayment,
+                      fallbackIcon: Icons.receipt_long_outlined,
+                      onTap: () => onOpenPlaceholder('Bill Payment'),
+                    ),
+                  ),
+                  SizedBox(width: 16.ui),
+                  Expanded(
+                    child: QuickActionCard(
+                      title: 'Mobile\nPackages',
+                      asset: AppAssets.mobilePackages,
+                      fallbackIcon: Icons.phone_iphone_outlined,
+                      onTap: () => onOpenPlaceholder('Mobile Packages'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            SizedBox(height: 20.ui),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.ui),
+              child: const Text(
+                'More with easypaisa',
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+            SizedBox(height: 12.ui),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.ui),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32.ui),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppColors.shadow,
+                      blurRadius: 26,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                padding: EdgeInsets.fromLTRB(12.ui, 16.ui, 12.ui, 14.ui),
+                child: Column(
+                  children: [
+                    GridView.count(
+                      crossAxisCount: 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 8,
+                      childAspectRatio: 0.92,
+                      children: [
+                        FeatureTile(
+                          title: 'Easyload',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.add_card_outlined,
+                          onTap: () => onOpenPlaceholder('Easyload'),
+                        ),
+                        FeatureTile(
+                          title: 'Easycash\nLoan',
+                          asset: AppAssets.wallet,
+                          fallbackIcon: Icons.volunteer_activism_outlined,
+                          onTap: () => onOpenPlaceholder('Easycash Loan'),
+                        ),
+                        FeatureTile(
+                          title: 'Savings\nPocket',
+                          asset: AppAssets.walletIcon,
+                          fallbackIcon: Icons.savings_outlined,
+                          onTap: () => onOpenPlaceholder('Savings Pocket'),
+                        ),
+                        FeatureTile(
+                          title: 'Invite\n& Earn',
+                          asset: AppAssets.sendMoney,
+                          fallbackIcon: Icons.people_outline_rounded,
+                          onTap: () => onOpenPlaceholder('Invite & Earn'),
+                        ),
+                        FeatureTile(
+                          title: 'Donations',
+                          asset: AppAssets.wallet,
+                          fallbackIcon: Icons.volunteer_activism_outlined,
+                          onTap: () => onOpenPlaceholder('Donations'),
+                        ),
+                        FeatureTile(
+                          title: 'Term\nDeposit',
+                          asset: AppAssets.walletIcon,
+                          fallbackIcon: Icons.account_balance_wallet_outlined,
+                          onTap: () => onOpenPlaceholder('Term Deposit'),
+                        ),
+                        FeatureTile(
+                          title: 'Daily\nRewards',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.card_giftcard_outlined,
+                          onTap: () => onOpenPlaceholder('Daily Rewards'),
+                        ),
+                        FeatureTile(
+                          title: 'Buy Now\nPay Later',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.calendar_month_outlined,
+                          onTap: () => onOpenPlaceholder('Buy Now Pay Later'),
+                        ),
+                        FeatureTile(
+                          title: 'Insurance\nMarketplace',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.umbrella_outlined,
+                          onTap: () =>
+                              onOpenPlaceholder('Insurance Marketplace'),
+                        ),
+                        FeatureTile(
+                          title: 'M-Tag',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.route_outlined,
+                          onTap: () => onOpenPlaceholder('M-Tag'),
+                        ),
+                        FeatureTile(
+                          title: 'Rs.1 Game',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.celebration_outlined,
+                          onTap: () => onOpenPlaceholder('Rs.1 Game'),
+                        ),
+                        FeatureTile(
+                          title: 'See All',
+                          asset: AppAssets.quickCard,
+                          fallbackIcon: Icons.more_horiz_rounded,
+                          onTap: () => onOpenPlaceholder('More services'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10.ui),
+                    const _DotsIndicator(activeIndex: 0, count: 2),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 22.ui),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.ui),
+              child: const Text(
+                'Get your easypaisa Debit Card',
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+            SizedBox(height: 12.ui),
+            SizedBox(
+              height: 196.ui,
+              child: ListView(
+                padding: EdgeInsets.symmetric(horizontal: 16.ui),
+                scrollDirection: Axis.horizontal,
+                children: [
+                  DebitCardTile(
+                    title: 'Online Card',
+                    subtitle: 'Only for Online\nPayments in Pakistan',
+                    backgroundColor: const Color(0xFF438E83),
+                    accentColor: const Color(0xFFF9D780),
+                    asset: AppAssets.onlineCard,
+                    onTap: () => onOpenPlaceholder('Online Card'),
+                  ),
+                  SizedBox(width: 18.ui),
+                  DebitCardTile(
+                    title: 'Plastic Card',
+                    subtitle: 'Use at any ATM or\nShop in Pakistan',
+                    backgroundColor: const Color(0xFF3C3D4D),
+                    accentColor: const Color(0xFFF9D780),
+                    asset: AppAssets.plasticCard,
+                    onTap: () => onOpenPlaceholder('Plastic Card'),
+                  ),
+                ],
+              ),
+            ),
             SizedBox(height: 24.ui),
           ],
         ),
@@ -679,9 +744,7 @@ class _HomeHeaderCluster extends StatelessWidget {
               Container(
                 height: lowerPanelHeight,
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF0FAF0),
-                ),
+                decoration: const BoxDecoration(color: Color(0xFFF0FAF0)),
               ),
             ],
           ),
@@ -737,9 +800,15 @@ class _HomeHero extends StatelessWidget {
                     return Container(
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(colors: [Color(0xFF5B5C69), Color(0xFFB3B7B9)]),
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF5B5C69), Color(0xFFB3B7B9)],
+                        ),
                       ),
-                      child: Icon(Icons.person, color: Colors.white, size: 28.ui * scale * HomeScale.factor),
+                      child: Icon(
+                        Icons.person,
+                        color: Colors.white,
+                        size: 28.ui * scale * HomeScale.factor,
+                      ),
                     );
                   },
                 ),
@@ -768,7 +837,11 @@ class _HomeHero extends StatelessWidget {
             right: 52.ui,
             child: IconButton(
               onPressed: onSearch,
-              icon: Icon(Icons.search_rounded, color: AppColors.textPrimary, size: 21.ui * scale * HomeScale.factor),
+              icon: Icon(
+                Icons.search_rounded,
+                color: AppColors.textPrimary,
+                size: 21.ui * scale * HomeScale.factor,
+              ),
             ),
           ),
           Positioned(
@@ -776,7 +849,11 @@ class _HomeHero extends StatelessWidget {
             right: 8.ui,
             child: IconButton(
               onPressed: onNotifications,
-              icon: Icon(Icons.notifications_none_rounded, color: AppColors.textPrimary, size: 21.ui * scale * HomeScale.factor),
+              icon: Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.textPrimary,
+                size: 21.ui * scale * HomeScale.factor,
+              ),
             ),
           ),
         ],
@@ -804,7 +881,10 @@ class _DigitalBankFallback extends StatelessWidget {
                 width: 21.ui,
                 height: 21.ui,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.textPrimary, width: 4.5.ui),
+                  border: Border.all(
+                    color: AppColors.textPrimary,
+                    width: 4.5.ui,
+                  ),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -815,7 +895,9 @@ class _DigitalBankFallback extends StatelessWidget {
                   height: 10.5.ui,
                   decoration: const BoxDecoration(
                     color: AppColors.brandGreen,
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(14),
+                    ),
                   ),
                 ),
               ),
@@ -853,10 +935,7 @@ class _DigitalBankFallback extends StatelessWidget {
 }
 
 class _AccountCard extends StatelessWidget {
-  const _AccountCard({
-    required this.onSignIn,
-    required this.scale,
-  });
+  const _AccountCard({required this.onSignIn, required this.scale});
 
   final VoidCallback onSignIn;
   final double scale;
@@ -868,17 +947,29 @@ class _AccountCard extends StatelessWidget {
         color: AppColors.tealCard,
         borderRadius: BorderRadius.circular(18.ui * scale),
         boxShadow: const [
-          BoxShadow(color: AppColors.shadow, blurRadius: 14, offset: Offset(0, 6)),
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(10.5.ui * scale, 10.5.ui * scale, 10.5.ui * scale, 10.5.ui * scale),
+      padding: EdgeInsets.fromLTRB(
+        10.5.ui * scale,
+        10.5.ui * scale,
+        10.5.ui * scale,
+        10.5.ui * scale,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Align(
             alignment: Alignment.topLeft,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 9.ui * scale, vertical: 6.ui * scale),
+              padding: EdgeInsets.symmetric(
+                horizontal: 9.ui * scale,
+                vertical: 6.ui * scale,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6.ui * scale),
@@ -886,7 +977,11 @@ class _AccountCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 13.5.ui * scale * HomeScale.factor),
+                  Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Colors.white,
+                    size: 13.5.ui * scale * HomeScale.factor,
+                  ),
                   SizedBox(width: 6.ui * scale),
                   Text(
                     'easypaisa Account',
@@ -941,7 +1036,11 @@ class _AccountCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Sign in to your easypaisa Account',
-                  style: TextStyle(color: Colors.white, fontSize: 11 * scale, height: 1.15),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11 * scale,
+                    height: 1.15,
+                  ),
                 ),
               ),
               SizedBox(width: 7.5.ui * scale),
@@ -953,9 +1052,17 @@ class _AccountCard extends StatelessWidget {
                     backgroundColor: AppColors.brandGreen,
                     foregroundColor: Colors.white,
                     minimumSize: Size.fromHeight(30.ui * scale),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.ui * scale)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15.ui * scale),
+                    ),
                   ),
-                  child: Text('Sign-In', style: TextStyle(fontSize: 11 * scale, fontWeight: FontWeight.w500)),
+                  child: Text(
+                    'Sign-In',
+                    style: TextStyle(
+                      fontSize: 11 * scale,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -995,7 +1102,11 @@ class QuickActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18.ui),
             boxShadow: const [
-              BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 6)),
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 10,
+                offset: Offset(0, 6),
+              ),
             ],
           ),
           child: Column(
@@ -1183,10 +1294,7 @@ class AssetOrIcon extends StatelessWidget {
 }
 
 class _DotsIndicator extends StatelessWidget {
-  const _DotsIndicator({
-    required this.activeIndex,
-    required this.count,
-  });
+  const _DotsIndicator({required this.activeIndex, required this.count});
 
   final int activeIndex;
   final int count;
@@ -1225,16 +1333,54 @@ class SendMoneySheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = <_SheetOption>[
-      _SheetOption('easypaisa\nTransfer', AppAssets.easypaisaTransfer, Icons.currency_exchange_rounded, AppColors.textPrimary, () => onPlaceholder('easypaisa Transfer')),
-      _SheetOption('Bank\nTransfer', AppAssets.bankTransfer, Icons.account_balance_outlined, AppColors.textPrimary, onBankTransfer),
-      _SheetOption('CNIC\nTransfer', AppAssets.cnicTransfer, Icons.badge_outlined, AppColors.textPrimary, () => onPlaceholder('CNIC Transfer')),
-      _SheetOption('Raast\nPayment', AppAssets.raast, Icons.account_balance_outlined, AppColors.textPrimary, () => onPlaceholder('Raast Payment')),
-      _SheetOption('Other\nWallets', AppAssets.wallet, Icons.account_balance_wallet_outlined, AppColors.textPrimary, () => onPlaceholder('Other Wallets')),
-      _SheetOption('Scan QR', AppAssets.scanQr, Icons.qr_code_scanner_rounded, AppColors.textPrimary, () => onPlaceholder('Scan QR')),
+      _SheetOption(
+        'easypaisa\nTransfer',
+        AppAssets.easypaisaTransfer,
+        Icons.currency_exchange_rounded,
+        AppColors.textPrimary,
+        () => onPlaceholder('easypaisa Transfer'),
+      ),
+      _SheetOption(
+        'Bank\nTransfer',
+        AppAssets.bankTransfer,
+        Icons.account_balance_outlined,
+        AppColors.textPrimary,
+        onBankTransfer,
+      ),
+      _SheetOption(
+        'CNIC\nTransfer',
+        AppAssets.cnicTransfer,
+        Icons.badge_outlined,
+        AppColors.textPrimary,
+        () => onPlaceholder('CNIC Transfer'),
+      ),
+      _SheetOption(
+        'Raast\nPayment',
+        AppAssets.raast,
+        Icons.account_balance_outlined,
+        AppColors.textPrimary,
+        () => onPlaceholder('Raast Payment'),
+      ),
+      _SheetOption(
+        'Other\nWallets',
+        AppAssets.wallet,
+        Icons.account_balance_wallet_outlined,
+        AppColors.textPrimary,
+        () => onPlaceholder('Other Wallets'),
+      ),
+      _SheetOption(
+        'Scan QR',
+        AppAssets.scanQr,
+        Icons.qr_code_scanner_rounded,
+        AppColors.textPrimary,
+        () => onPlaceholder('Scan QR'),
+      ),
     ];
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.68),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.68,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -1288,7 +1434,13 @@ class SendMoneySheet extends StatelessWidget {
 }
 
 class _SheetOption {
-  const _SheetOption(this.title, this.asset, this.fallbackIcon, this.color, this.onTap);
+  const _SheetOption(
+    this.title,
+    this.asset,
+    this.fallbackIcon,
+    this.color,
+    this.onTap,
+  );
 
   final String title;
   final String asset;
@@ -1364,22 +1516,67 @@ class BankTransferScreen extends StatefulWidget {
   State<BankTransferScreen> createState() => _BankTransferScreenState();
 }
 
-class _BankTransferScreenState extends State<BankTransferScreen> with SingleTickerProviderStateMixin {
+class _BankTransferScreenState extends State<BankTransferScreen>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   late final TabController _tabController;
 
   final List<BankOption> _banks = const [
-    BankOption(name: 'JazzCash', asset: AppAssets.jazzCashBankLogo, fallbackColor: AppColors.brandGreen),
-    BankOption(name: 'Easypaisa  Bank', asset: AppAssets.easypisaBankLogo, fallbackColor: AppColors.brandGreen),
-    BankOption(name: 'ABHI Microfinance Bank', asset: 'assets/banks/abhi.png', fallbackColor: Color(0xFF273A53)),
-    BankOption(name: 'Al Baraka Islamic Bank Limited', asset: 'assets/banks/albaraka.png', fallbackColor: Color(0xFFEF4C6F)),
-    BankOption(name: 'Alfa Pay', asset: 'assets/banks/alfapay.png', fallbackColor: Color(0xFFE8492E)),
-    BankOption(name: 'Allied Bank Limited', asset: 'assets/banks/allied.png', fallbackColor: Color(0xFF3474C6)),
-    BankOption(name: 'Apna Microfinance Bank', asset: 'assets/banks/apna.png', fallbackColor: Color(0xFF7DAD2C)),
-    BankOption(name: 'Askari Commercial Bank Limited', asset: 'assets/banks/askari.png', fallbackColor: Color(0xFF2C8BC8)),
-    BankOption(name: 'Bank Al Habib Limited', asset: 'assets/banks/bank_al_habib.png', fallbackColor: Color(0xFF20794F)),
-    BankOption(name: 'Bank Alfalah', asset: 'assets/banks/bank_alfalah.png', fallbackColor: Color(0xFFF3683B)),
-    BankOption(name: 'BankIslami', asset: 'assets/banks/bankislami.png', fallbackColor: Color(0xFF0D7F4F)),
+    BankOption(
+      name: 'JazzCash',
+      asset: AppAssets.jazzCashBankLogo,
+      fallbackColor: AppColors.brandGreen,
+    ),
+    BankOption(
+      name: 'Easypaisa  Bank',
+      asset: AppAssets.easypisaBankLogo,
+      fallbackColor: AppColors.brandGreen,
+    ),
+    BankOption(
+      name: 'ABHI Microfinance Bank',
+      asset: 'assets/banks/abhi.png',
+      fallbackColor: Color(0xFF273A53),
+    ),
+    BankOption(
+      name: 'Al Baraka Islamic Bank Limited',
+      asset: 'assets/banks/albaraka.png',
+      fallbackColor: Color(0xFFEF4C6F),
+    ),
+    BankOption(
+      name: 'Alfa Pay',
+      asset: 'assets/banks/alfapay.png',
+      fallbackColor: Color(0xFFE8492E),
+    ),
+    BankOption(
+      name: 'Allied Bank Limited',
+      asset: 'assets/banks/allied.png',
+      fallbackColor: Color(0xFF3474C6),
+    ),
+    BankOption(
+      name: 'Apna Microfinance Bank',
+      asset: 'assets/banks/apna.png',
+      fallbackColor: Color(0xFF7DAD2C),
+    ),
+    BankOption(
+      name: 'Askari Commercial Bank Limited',
+      asset: 'assets/banks/askari.png',
+      fallbackColor: Color(0xFF2C8BC8),
+    ),
+    BankOption(
+      name: 'Bank Al Habib Limited',
+      asset: 'assets/banks/bank_al_habib.png',
+      fallbackColor: Color(0xFF20794F),
+    ),
+    BankOption(
+      name: 'Bank Alfalah',
+      asset: 'assets/banks/bank_alfalah.png',
+      fallbackColor: Color(0xFFF3683B),
+    ),
+    BankOption(
+      name: 'BankIslami',
+      asset: 'assets/banks/bankislami.png',
+      fallbackColor: Color(0xFF0D7F4F),
+    ),
   ];
 
   @override
@@ -1399,7 +1596,9 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
   List<BankOption> get _filteredBanks {
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) return _banks;
-    return _banks.where((bank) => bank.name.toLowerCase().contains(query)).toList();
+    return _banks
+        .where((bank) => bank.name.toLowerCase().contains(query))
+        .toList();
   }
 
   @override
@@ -1418,8 +1617,14 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
               controller: _tabController,
               labelColor: AppColors.brandGreen,
               unselectedLabelColor: const Color(0xFF9E9E9E),
-              labelStyle: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
-              unselectedLabelStyle: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
+              labelStyle: const TextStyle(
+                fontSize: 23,
+                fontWeight: FontWeight.w700,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 23,
+                fontWeight: FontWeight.w700,
+              ),
               indicatorColor: AppColors.brandGreen,
               indicatorWeight: 4,
               tabs: const [
@@ -1441,8 +1646,15 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: 'Search Bank by Name',
-                    hintStyle: const TextStyle(fontSize: 23, color: Color(0xFF5F5C6E)),
-                    suffixIcon: Icon(Icons.search_rounded, size: 24.ui, color: const Color(0xFFB6B6B8)),
+                    hintStyle: const TextStyle(
+                      fontSize: 23,
+                      color: Color(0xFF5F5C6E),
+                    ),
+                    suffixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 24.ui,
+                      color: const Color(0xFFB6B6B8),
+                    ),
                   ),
                   style: const TextStyle(fontSize: 23),
                 ),
@@ -1456,7 +1668,8 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
                   ListView.separated(
                     padding: EdgeInsets.fromLTRB(9.ui, 3.ui, 9.ui, 13.5.ui),
                     itemCount: _filteredBanks.length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFEDEDF1)),
+                    separatorBuilder: (_, _) =>
+                        const Divider(height: 1, color: Color(0xFFEDEDF1)),
                     itemBuilder: (context, index) {
                       final bank = _filteredBanks[index];
                       return BankTile(
@@ -1464,7 +1677,10 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
                         onTap: () {
                           Navigator.of(context).push(
                             MaterialPageRoute<void>(
-                              builder: (_) => TransferFormScreen(bankName: bank.name, logoAsset: bank.asset),
+                              builder: (_) => TransferFormScreen(
+                                bankName: bank.name,
+                                logoAsset: bank.asset,
+                              ),
                             ),
                           );
                         },
@@ -1474,7 +1690,10 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
                   const Center(
                     child: Text(
                       'History will be wired here next.',
-                      style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -1488,11 +1707,7 @@ class _BankTransferScreenState extends State<BankTransferScreen> with SingleTick
 }
 
 class BankTile extends StatelessWidget {
-  const BankTile({
-    super.key,
-    required this.bank,
-    required this.onTap,
-  });
+  const BankTile({super.key, required this.bank, required this.onTap});
 
   final BankOption bank;
   final VoidCallback onTap;
@@ -1523,7 +1738,11 @@ class BankTile extends StatelessWidget {
               ),
             ),
             SizedBox(width: 7.5.ui),
-            Icon(Icons.chevron_right_rounded, size: 28.5.ui, color: const Color(0xFF454054)),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 28.5.ui,
+              color: const Color(0xFF454054),
+            ),
           ],
         ),
       ),
@@ -1630,10 +1849,7 @@ class _BrandInitialsCircle extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
       child: Text(
         initials,
         style: TextStyle(
@@ -1662,8 +1878,11 @@ class TransferFormScreen extends StatefulWidget {
 
 class _TransferFormScreenState extends State<TransferFormScreen> {
   final TextEditingController _accountController = TextEditingController();
-  final TextEditingController _recipientNameController = TextEditingController();
-  final TextEditingController _purposeController = TextEditingController(text: 'Others');
+  final TextEditingController _recipientNameController =
+      TextEditingController();
+  final TextEditingController _purposeController = TextEditingController(
+    text: 'Others',
+  );
   int _selectedReceiverDetail = 0;
 
   @override
@@ -1675,7 +1894,8 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
   }
 
   bool get _canContinue =>
-      _accountController.text.trim().isNotEmpty && _recipientNameController.text.trim().isNotEmpty;
+      _accountController.text.trim().isNotEmpty &&
+      _recipientNameController.text.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -1729,7 +1949,11 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                               ),
                             ),
                             SizedBox(width: 7.5.ui),
-                            Icon(Icons.account_balance_outlined, color: AppColors.brandGreen, size: 28.5.ui),
+                            Icon(
+                              Icons.account_balance_outlined,
+                              color: AppColors.brandGreen,
+                              size: 28.5.ui,
+                            ),
                           ],
                         ),
                       ),
@@ -1777,7 +2001,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(13.5.ui),
-                      border: Border.all(color: const Color(0xFFE0E0E4), width: 1.6),
+                      border: Border.all(
+                        color: const Color(0xFFE0E0E4),
+                        width: 1.6,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1796,7 +2023,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 13.5, vertical: 18),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 13.5,
+                                vertical: 18,
+                              ),
                               hintText: 'Enter Account Number',
                               hintStyle: TextStyle(
                                 color: Color(0xFFC7C7CD),
@@ -1804,7 +2034,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -1821,7 +2054,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(13.5.ui),
-                      border: Border.all(color: const Color(0xFFE0E0E4), width: 1.6),
+                      border: Border.all(
+                        color: const Color(0xFFE0E0E4),
+                        width: 1.6,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1841,7 +2077,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 13.5, vertical: 18),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 13.5,
+                                vertical: 18,
+                              ),
                               hintText: 'Enter Recipient Name',
                               hintStyle: TextStyle(
                                 color: Color(0xFFC7C7CD),
@@ -1849,7 +2088,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -1870,17 +2112,27 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(13.5.ui),
-                        border: Border.all(color: const Color(0xFFE0E0E4), width: 1.6),
+                        border: Border.all(
+                          color: const Color(0xFFE0E0E4),
+                          width: 1.6,
+                        ),
                       ),
                       child: const Row(
                         children: [
                           Expanded(
                             child: Text(
                               'Others',
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
                           ),
-                          Icon(Icons.chevron_right_rounded, size: 33, color: Color(0xFF454054)),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 33,
+                            color: Color(0xFF454054),
+                          ),
                         ],
                       ),
                     ),
@@ -1896,8 +2148,10 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                                   builder: (_) => AmountEntryScreen(
                                     bankName: widget.bankName,
                                     logoAsset: widget.logoAsset,
-                                    accountNumber: _accountController.text.trim(),
-                                    recipientName: _recipientNameController.text.trim(),
+                                    accountNumber: _accountController.text
+                                        .trim(),
+                                    recipientName: _recipientNameController.text
+                                        .trim(),
                                   ),
                                 ),
                               );
@@ -1907,7 +2161,9 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                         backgroundColor: AppColors.brandGreen,
                         disabledBackgroundColor: const Color(0xFFD9DDE1),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.5.ui)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25.5.ui),
+                        ),
                       ),
                       child: Text(
                         'Next',
@@ -1952,7 +2208,9 @@ class _RadioRow extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: selected ? AppColors.brandGreen : const Color(0xFF6D6881),
+                color: selected
+                    ? AppColors.brandGreen
+                    : const Color(0xFF6D6881),
                 width: 2.2,
               ),
             ),
@@ -2005,7 +2263,10 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
   void initState() {
     super.initState();
     _amountController = TextEditingController(text: '0');
-    _amountController.selection = const TextSelection(baseOffset: 0, extentOffset: 1);
+    _amountController.selection = const TextSelection(
+      baseOffset: 0,
+      extentOffset: 1,
+    );
   }
 
   @override
@@ -2070,13 +2331,21 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 10),
-                                const Icon(Icons.account_balance_outlined, color: AppColors.brandGreen, size: 21),
+                                const Icon(
+                                  Icons.account_balance_outlined,
+                                  color: AppColors.brandGreen,
+                                  size: 21,
+                                ),
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
                               widget.accountNumber,
-                              style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w500, color: Colors.black),
+                              style: const TextStyle(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black,
+                              ),
                             ),
                           ],
                         ),
@@ -2094,7 +2363,10 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                   children: [
                     const Text(
                       'Enter Amount',
-                      style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 54),
                     Row(
@@ -2103,7 +2375,11 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                       children: [
                         const Text(
                           'Rs. ',
-                          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w500, color: Color.fromARGB(255, 14, 13, 15)),
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w500,
+                            color: Color.fromARGB(255, 14, 13, 15),
+                          ),
                         ),
                         SizedBox(
                           width: 230,
@@ -2111,7 +2387,9 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                             controller: _amountController,
                             autofocus: true,
                             keyboardType: TextInputType.number,
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             onChanged: (_) => setState(() {}),
                             textAlign: TextAlign.center,
                             decoration: const InputDecoration(
@@ -2140,6 +2418,8 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                                   MaterialPageRoute<void>(
                                     builder: (_) => ReviewTransferScreen(
                                       amount: _amount.toDouble(),
+                                      bankName: widget.bankName,
+                                      logoAsset: widget.logoAsset,
                                       accountNumber: widget.accountNumber,
                                       recipientName: widget.recipientName,
                                     ),
@@ -2150,9 +2430,17 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.brandGreen,
                           disabledBackgroundColor: const Color(0xFFD9DDE1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(36),
+                          ),
                         ),
-                        child: const Text('Next', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w500)),
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2170,11 +2458,15 @@ class ReviewTransferScreen extends StatefulWidget {
   const ReviewTransferScreen({
     super.key,
     required this.amount,
+    required this.bankName,
+    required this.logoAsset,
     required this.accountNumber,
     required this.recipientName,
   });
 
   final double amount;
+  final String bankName;
+  final String logoAsset;
   final String accountNumber;
   final String recipientName;
 
@@ -2190,7 +2482,10 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
       appBar: AppBar(
-        title: const Text('Send Money'),
+        title: const Text(
+          'Send Money',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+        ),
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 30),
@@ -2199,7 +2494,10 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
         children: [
-          const Text('Pay From', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+          const Text(
+            'Pay From',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 10),
           _ReviewCard(
             child: Row(
@@ -2218,11 +2516,18 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
                       children: [
                         TextSpan(
                           text: 'easypaisa Account:\n',
-                          style: TextStyle(fontSize: 23, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontSize: 23,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         TextSpan(
                           text: 'Balance Rs. 25000.44',
-                          style: TextStyle(fontSize: 24, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
@@ -2232,15 +2537,15 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
             ),
           ),
           const SizedBox(height: 30),
-          const Text('Pay To', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+          const Text(
+            'Pay To',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
           _ReviewCard(
             child: Column(
               children: [
-                _ReviewRow(
-                  label: 'Account Title',
-                  value: widget.recipientName,
-                ),
+                _ReviewRow(label: 'Account Title', value: widget.recipientName),
                 const SizedBox(height: 24),
                 _ReviewRow(
                   label: 'Account Number',
@@ -2260,20 +2565,33 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          const Text('Payment Summary', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+          const Text(
+            'Payment Summary',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 12),
           _ReviewCard(
             child: Column(
               children: [
-                _ReviewRow(label: 'Transfer Amount', value: 'Rs. ${widget.amount.toStringAsFixed(0)}'),
+                _ReviewRow(
+                  label: 'Transfer Amount',
+                  value: 'Rs. ${widget.amount.toStringAsFixed(0)}',
+                ),
                 const SizedBox(height: 24),
                 _ReviewRow(label: 'Fee (including tax)', value: 'Free'),
                 const SizedBox(height: 24),
                 _ReviewRow(
                   label: 'Total Amount',
                   value: 'Rs. ${widget.amount.toStringAsFixed(2)}',
-                  valueStyle: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.black),
-                  labelStyle: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+                  valueStyle: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black,
+                  ),
+                  labelStyle: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -2298,7 +2616,10 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
                 Expanded(
                   child: Text(
                     'Please review the details carefully before sending money.',
-                    style: TextStyle(fontSize: 22, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ],
@@ -2312,13 +2633,15 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 6, 24, 24),
           child: SizedBox(
-            height: 72,
+            height: 52,
             child: FilledButton(
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
                     builder: (_) => SendingScreen(
                       amount: widget.amount,
+                      bankName: widget.bankName,
+                      logoAsset: widget.logoAsset,
                       recipientAccount: widget.accountNumber,
                       recipientName: widget.recipientName,
                     ),
@@ -2327,11 +2650,16 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(36)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(36),
+                ),
               ),
               child: Text(
                 'Send Rs. ${widget.amount.toStringAsFixed(0)}',
-                style: const TextStyle(fontSize: 27, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 27,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -2355,7 +2683,11 @@ class _ReviewCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(color: AppColors.shadow, blurRadius: 20, offset: Offset(0, 8)),
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 20,
+            offset: Offset(0, 8),
+          ),
         ],
       ),
       child: child,
@@ -2385,11 +2717,9 @@ class _ReviewRow extends StatelessWidget {
           fit: FlexFit.loose,
           child: Text(
             label,
-            style: labelStyle ??
-                const TextStyle(
-                  fontSize: 24,
-                  color: AppColors.textPrimary,
-                ),
+            style:
+                labelStyle ??
+                const TextStyle(fontSize: 24, color: AppColors.textPrimary),
           ),
         ),
         const SizedBox(width: 12),
@@ -2399,7 +2729,8 @@ class _ReviewRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.right,
-            style: valueStyle ??
+            style:
+                valueStyle ??
                 const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -2413,10 +2744,7 @@ class _ReviewRow extends StatelessWidget {
 }
 
 class _FavoriteContactCard extends StatelessWidget {
-  const _FavoriteContactCard({
-    required this.selected,
-    required this.onTap,
-  });
+  const _FavoriteContactCard({required this.selected, required this.onTap});
 
   final bool selected;
   final VoidCallback onTap;
@@ -2432,24 +2760,33 @@ class _FavoriteContactCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: const [
-            BoxShadow(color: AppColors.shadow, blurRadius: 20, offset: Offset(0, 8)),
+            BoxShadow(
+              color: AppColors.shadow,
+              blurRadius: 20,
+              offset: Offset(0, 8),
+            ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 22,
+              height: 22,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: selected ? AppColors.brandGreen : const Color(0xFFBDBDC4),
+                  color: selected
+                      ? AppColors.brandGreen
+                      : const Color(0xFFBDBDC4),
                   width: 2.4,
                 ),
                 color: selected ? AppColors.brandGreen : Colors.white,
               ),
               child: selected
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 26)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    )
                   : null,
             ),
             const SizedBox(width: 16),
@@ -2459,12 +2796,16 @@ class _FavoriteContactCard extends StatelessWidget {
                 children: [
                   Text(
                     'Favourite Contact',
-                    style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 3),
                   Text(
-                    'Add this recipient as a favourite for easy\npayments in the future.',
-                    style: TextStyle(fontSize: 20, color: Color(0xFFABA7B1), height: 1.15),
+                    'Add this recipient as a favourite for easypayments in the future.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFFABA7B1),
+                      height: 1.15,
+                    ),
                   ),
                 ],
               ),
@@ -2480,11 +2821,15 @@ class SendingScreen extends StatefulWidget {
   const SendingScreen({
     super.key,
     required this.amount,
+    required this.bankName,
+    required this.logoAsset,
     required this.recipientAccount,
     required this.recipientName,
   });
 
   final double amount;
+  final String bankName;
+  final String logoAsset;
   final String recipientAccount;
   final String recipientName;
 
@@ -2504,6 +2849,8 @@ class _SendingScreenState extends State<SendingScreen> {
         MaterialPageRoute<void>(
           builder: (_) => TransferSuccessScreen(
             amount: widget.amount,
+            bankName: widget.bankName,
+            logoAsset: widget.logoAsset,
             recipientAccount: widget.recipientAccount,
             recipientName: widget.recipientName,
           ),
@@ -2530,25 +2877,41 @@ class _SendingScreenState extends State<SendingScreen> {
               const SizedBox(height: 18),
               const Align(
                 alignment: Alignment.topRight,
-                child: Icon(Icons.close_rounded, size: 44, color: Color(0xFFBBBBBB)),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 44,
+                  color: Color(0xFFBBBBBB),
+                ),
               ),
               const Spacer(flex: 2),
               Column(
                 children: [
                   const Text(
                     'Sending',
-                    style: TextStyle(fontSize: 70, fontWeight: FontWeight.w700, height: 1.0),
+                    style: TextStyle(
+                      fontSize: 70,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   Text(
                     'Rs.${widget.amount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w700, height: 1.0),
+                    style: const TextStyle(
+                      fontSize: 56,
+                      fontWeight: FontWeight.w700,
+                      height: 1.0,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 34),
                   Text(
                     'to ${widget.recipientName}\n${widget.recipientAccount}',
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, height: 1.14),
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w700,
+                      height: 1.14,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -2577,11 +2940,19 @@ class _SendingScreenState extends State<SendingScreen> {
                           ),
                           const Positioned(
                             left: 22,
-                            child: Icon(Icons.account_balance_wallet_outlined, color: AppColors.brandGreen, size: 84),
+                            child: Icon(
+                              Icons.account_balance_wallet_outlined,
+                              color: AppColors.brandGreen,
+                              size: 84,
+                            ),
                           ),
                           const Positioned(
                             right: 18,
-                            child: Icon(Icons.account_balance_outlined, color: AppColors.brandGreen, size: 78),
+                            child: Icon(
+                              Icons.account_balance_outlined,
+                              color: AppColors.brandGreen,
+                              size: 78,
+                            ),
                           ),
                         ],
                       );
@@ -2592,7 +2963,11 @@ class _SendingScreenState extends State<SendingScreen> {
               const Spacer(flex: 2),
               const Text(
                 'Please wait',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w400, color: Colors.black),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
               ),
               const Spacer(flex: 3),
             ],
@@ -2607,11 +2982,15 @@ class TransferSuccessScreen extends StatelessWidget {
   const TransferSuccessScreen({
     super.key,
     required this.amount,
+    required this.bankName,
+    required this.logoAsset,
     required this.recipientAccount,
     required this.recipientName,
   });
 
   final double amount;
+  final String bankName;
+  final String logoAsset;
   final String recipientAccount;
   final String recipientName;
 
@@ -2628,49 +3007,84 @@ class TransferSuccessScreen extends StatelessWidget {
               child: Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                  icon: const Icon(Icons.close_rounded, size: 38, color: Color(0xFFBBBBBB)),
+                  onPressed: () =>
+                      Navigator.of(context).popUntil((route) => route.isFirst),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 38,
+                    color: Color(0xFFBBBBBB),
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 40),
             Center(
               child: Container(
-                width: 144,
-                height: 144,
+                width: 55,
+                height: 55,
                 decoration: const BoxDecoration(
-                  color: AppColors.brandGreen,
+                  color: Color.fromARGB(255, 17, 219, 118),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_rounded, color: Colors.white, size: 92),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
               ),
             ),
-            const SizedBox(height: 46),
+            const SizedBox(height: 56),
             Center(
               child: RichText(
                 text: TextSpan(
                   children: [
-                    const TextSpan(
-                      text: 'Rs ',
-                      style: TextStyle(fontSize: 38, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                    WidgetSpan(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 22.0),
+                        child: const Text(
+                          'Rs ',
+                          style: TextStyle(
+                            fontFamily: 'Google Sans',
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: Color.fromARGB(255, 14, 14, 15),
+                          ),
+                        ),
+                      ),
                     ),
                     TextSpan(
                       text: amount.toStringAsFixed(0),
-                      style: const TextStyle(fontSize: 102, fontWeight: FontWeight.w700, color: Colors.black, height: 1),
+                      style: const TextStyle(
+                        fontFamily: 'Google Sanssf',
+                        fontSize: 52,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                        height: 1,
+                      ),
                     ),
                     const TextSpan(
                       text: '.00',
-                      style: TextStyle(fontSize: 34, fontWeight: FontWeight.w500, color: Colors.black, height: 1.2),
+                      style: TextStyle(
+                        fontFamily: 'Google Sans',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                        height: 1.2,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 15),
             const Center(
               child: Text(
                 'Successfully Sent to',
-                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Color.fromARGB(255, 14, 14, 15),
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -2678,18 +3092,23 @@ class TransferSuccessScreen extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  BankLogo(
-                    name: 'Jazz Cash',
-                    asset: AppAssets.jazzCash,
-                    fallbackColor: AppColors.brandGreen,
-                    size: 110,
-                    circle: true,
+                  Container(
+                    padding: const EdgeInsets.all(
+                      2,
+                    ), // Space between logo and border
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.brandGreen, width: 2),
+                    ),
+                    child: BankLogo(
+                      name: bankName,
+                      asset: logoAsset,
+                      fallbackColor: AppColors.brandGreen,
+                      size: 55,
+                      circle: true,
+                    ),
                   ),
-                  const Positioned(
-                    right: -4,
-                    bottom: -2,
-                    child: Icon(Icons.star_rounded, color: AppColors.warning, size: 54),
-                  ),
+                  
                 ],
               ),
             ),
@@ -2697,58 +3116,61 @@ class TransferSuccessScreen extends StatelessWidget {
             Center(
               child: Text(
                 recipientName,
-                style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color.fromARGB(255, 15, 14, 15),
+                ),
               ),
             ),
             const SizedBox(height: 12),
-            const Center(
+            Center(
               child: Text(
-                '03191981267',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+                recipientAccount,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
+            // const SizedBox(height: 26),
+          
             const SizedBox(height: 26),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 18),
-                decoration: BoxDecoration(
-                  color: AppColors.successBlue,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Center(
-                  child: Text(
-                    'This contact has been saved as your favourite',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.successBlueText),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 46),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 26),
               child: Text(
                 'Important Details for you',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 8),
             Container(height: 1, color: const Color(0xFFEDEDF1)),
             const SizedBox(height: 20),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 26),
               child: Text(
                 "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
-                style: TextStyle(fontSize: 22, color: AppColors.textPrimary, height: 1.15),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  height: 1.15,
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
             _SuccessActionRow(
               icon: Icons.receipt_long_outlined,
               label: 'View Receipt',
               onTap: () => showReceiptDialog(
                 context,
                 amount: amount,
+                bankName: bankName,
                 recipientName: recipientName,
                 recipientAccount: recipientAccount,
               ),
@@ -2759,6 +3181,7 @@ class TransferSuccessScreen extends StatelessWidget {
               onTap: () => showReceiptDialog(
                 context,
                 amount: amount,
+                bankName: bankName,
                 recipientName: recipientName,
                 recipientAccount: recipientAccount,
               ),
@@ -2793,15 +3216,23 @@ class _SuccessActionRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
             child: Row(
               children: [
-                Icon(icon, size: 34, color: AppColors.textPrimary),
+                Icon(icon, size: 29, color: const Color.fromARGB(255, 53, 52, 53)),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, size: 42, color: AppColors.textPrimary),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 42,
+                  color: AppColors.textPrimary,
+                ),
               ],
             ),
           ),
@@ -2836,6 +3267,7 @@ String _formatReceiptDateTime(DateTime dateTime) {
 Future<void> showReceiptDialog(
   BuildContext context, {
   required double amount,
+  String? bankName,
   required String recipientName,
   required String recipientAccount,
 }) {
@@ -2865,91 +3297,146 @@ Future<void> showReceiptDialog(
                     children: [
                       const SizedBox(height: 18),
                       const Center(
-                        child: Icon(Icons.check_circle, size: 96, color: AppColors.brandGreen),
+                        child: Icon(
+                          Icons.check_circle,
+                          size: 52,
+                          color: AppColors.brandGreen,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       const Center(
                         child: Text(
                           'easypaisa',
-                          style: TextStyle(fontSize: 40, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 18),
                       const Center(
                         child: Text(
                           'Transaction Successful',
-                          style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: AppColors.brandGreen),
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.brandGreen,
+                          ),
                         ),
                       ),
                       const Center(
                         child: Text(
                           'Money has been sent.',
-                          style: TextStyle(fontSize: 22, color: Color(0xFF9A9A9A)),
+                          style: TextStyle(
+                            fontSize: 22,
+                            color: Color(0xFF9A9A9A),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 36),
                       Text(
                         receiptDateTime,
-                        style: const TextStyle(fontSize: 22, color: Color(0xFF9A9A9A)),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF9A9A9A),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       const Text(
                         'ID#51532053237',
-                        style: TextStyle(fontSize: 18, color: Color(0xFF9A9A9A)),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Color(0xFF9A9A9A),
+                        ),
                       ),
                       const SizedBox(height: 26),
                       const Text(
                         'Sent to',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         recipientName,
-                        style: const TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         recipientAccount,
-                        style: const TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'PK****************1267',
-                        style: TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                      Text(
+                        bankName ?? 'Bank transfer',
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 26),
                       const Text(
                         'Sent By',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       const Text(
                         'Muhammad Junaid Ramzan',
-                        style: TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         '03146232976',
-                        style: TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 26),
                       const Text(
                         'Amount',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         amount.toStringAsFixed(2),
-                        style: const TextStyle(fontSize: 22, color: Color(0xFF7D7D7D)),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          color: Color(0xFF7D7D7D),
+                        ),
                       ),
                       const SizedBox(height: 26),
                       const Text(
                         'Fee / Charge',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: Color(0xFF8E8E8E)),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF8E8E8E),
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 26,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF66C2FF),
                           borderRadius: BorderRadius.circular(999),
@@ -2962,20 +3449,40 @@ Future<void> showReceiptDialog(
                       const SizedBox(height: 22),
                       const Text(
                         'Total Amount',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.brandGreen),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.brandGreen,
+                        ),
                       ),
                       const SizedBox(height: 10),
                       Text(
                         'Rs. ${amount.toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 28),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _ReceiptAction(icon: Icons.share_outlined, label: 'Share', onTap: () {}),
-                          _ReceiptAction(icon: Icons.photo_outlined, label: 'Save to Photos', onTap: () {}),
-                          _ReceiptAction(icon: Icons.picture_as_pdf_outlined, label: 'Save as PDF', onTap: () {}),
+                          _ReceiptAction(
+                            icon: Icons.share_outlined,
+                            label: 'Share',
+                            onTap: () {},
+                          ),
+                          _ReceiptAction(
+                            icon: Icons.photo_outlined,
+                            label: 'Save to Photos',
+                            onTap: () {},
+                          ),
+                          _ReceiptAction(
+                            icon: Icons.picture_as_pdf_outlined,
+                            label: 'Save as PDF',
+                            onTap: () {},
+                          ),
                         ],
                       ),
                     ],
@@ -3035,7 +3542,8 @@ class MyAccountScreen extends StatefulWidget {
   State<MyAccountScreen> createState() => _MyAccountScreenState();
 }
 
-class _MyAccountScreenState extends State<MyAccountScreen> with SingleTickerProviderStateMixin {
+class _MyAccountScreenState extends State<MyAccountScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   final List<TransactionRecord> _transactions = const [
@@ -3095,7 +3603,9 @@ class _MyAccountScreenState extends State<MyAccountScreen> with SingleTickerProv
             ),
             Container(
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFD6D6DB), width: 2)),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFD6D6DB), width: 2),
+                ),
               ),
               child: TabBar(
                 controller: _tabController,
@@ -3103,8 +3613,14 @@ class _MyAccountScreenState extends State<MyAccountScreen> with SingleTickerProv
                 unselectedLabelColor: const Color(0xFFB4B4B8),
                 indicatorColor: AppColors.brandGreen,
                 indicatorWeight: 4,
-                labelStyle: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
-                unselectedLabelStyle: const TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
+                labelStyle: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                ),
                 tabs: const [
                   Tab(text: 'Summary'),
                   Tab(text: 'Transaction History'),
@@ -3119,17 +3635,28 @@ class _MyAccountScreenState extends State<MyAccountScreen> with SingleTickerProv
                     padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 20,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: const [
-                            BoxShadow(color: AppColors.shadow, blurRadius: 16, offset: Offset(0, 8)),
+                            BoxShadow(
+                              color: AppColors.shadow,
+                              blurRadius: 16,
+                              offset: Offset(0, 8),
+                            ),
                           ],
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.account_balance_wallet_outlined, size: 40, color: AppColors.brandGreen),
+                            Icon(
+                              Icons.account_balance_wallet_outlined,
+                              size: 40,
+                              color: AppColors.brandGreen,
+                            ),
                             SizedBox(width: 16),
                             Expanded(
                               child: Text(
@@ -3162,7 +3689,9 @@ class _TransactionHistoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final grouped = <String, List<TransactionRecord>>{};
     for (final record in records) {
-      grouped.putIfAbsent(record.dateLabel, () => <TransactionRecord>[]).add(record);
+      grouped
+          .putIfAbsent(record.dateLabel, () => <TransactionRecord>[])
+          .add(record);
     }
 
     return ListView(
@@ -3174,7 +3703,11 @@ class _TransactionHistoryTab extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             boxShadow: const [
-              BoxShadow(color: AppColors.shadow, blurRadius: 16, offset: Offset(0, 8)),
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
             ],
           ),
           child: Row(
@@ -3183,7 +3716,11 @@ class _TransactionHistoryTab extends StatelessWidget {
                 'assets/icons/pdf_download.png',
                 width: 34,
                 height: 34,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFFEA6E6E), size: 34),
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: Color(0xFFEA6E6E),
+                  size: 34,
+                ),
               ),
               const SizedBox(width: 14),
               const Expanded(
@@ -3204,7 +3741,10 @@ class _TransactionHistoryTab extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16, bottom: 14),
               child: Text(
                 entry.key,
-                style: const TextStyle(fontSize: 23, color: AppColors.textPrimary),
+                style: const TextStyle(
+                  fontSize: 23,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             ...entry.value.map(
@@ -3251,7 +3791,9 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amountColor = record.isCredit ? AppColors.brandGreen : AppColors.danger;
+    final amountColor = record.isCredit
+        ? AppColors.brandGreen
+        : AppColors.danger;
     return InkWell(
       onTap: () => showReceiptDialog(
         context,
@@ -3286,12 +3828,20 @@ class TransactionCard extends StatelessWidget {
                     children: [
                       Text(
                         record.title,
-                        style: const TextStyle(fontSize: 23, height: 1.06, color: Colors.black),
+                        style: const TextStyle(
+                          fontSize: 23,
+                          height: 1.06,
+                          color: Colors.black,
+                        ),
                       ),
                       const SizedBox(height: 22),
                       Text(
                         record.time,
-                        style: const TextStyle(fontSize: 18, color: Color(0xFF8B8B91), fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: Color(0xFF8B8B91),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -3299,10 +3849,18 @@ class TransactionCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   'Rs. ${record.amount.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 20, color: amountColor, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: amountColor,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.chevron_right_rounded, size: 32, color: AppColors.textPrimary),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 32,
+                  color: AppColors.textPrimary,
+                ),
               ],
             ),
             if (record.showRepeat)
@@ -3310,7 +3868,10 @@ class TransactionCard extends StatelessWidget {
                 right: 30,
                 bottom: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE2E2E2),
                     borderRadius: BorderRadius.circular(999),
@@ -3380,7 +3941,10 @@ class _EasyPaisaFallback extends StatelessWidget {
               width: 22.5.ui,
               height: 22.5.ui,
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.textPrimary, width: 5.25.ui),
+                border: Border.all(
+                  color: AppColors.textPrimary,
+                  width: 5.25.ui,
+                ),
                 shape: BoxShape.circle,
               ),
             ),
@@ -3391,7 +3955,9 @@ class _EasyPaisaFallback extends StatelessWidget {
                 height: 10.5.ui,
                 decoration: const BoxDecoration(
                   color: AppColors.brandGreen,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(15),
+                  ),
                 ),
               ),
             ),
@@ -3460,7 +4026,11 @@ class SimpleAppBar extends StatelessWidget {
                 left: 3.ui,
                 child: IconButton(
                   onPressed: onBack ?? () => Navigator.of(context).maybePop(),
-                  icon: Icon(Icons.arrow_back_ios_new_rounded, size: 25.5.ui, color: AppColors.textPrimary),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 25.5.ui,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               Center(
@@ -3475,12 +4045,16 @@ class SimpleAppBar extends StatelessWidget {
               ),
               Positioned(
                 right: 13.5.ui,
-                child: rightWidget ??
+                child:
+                    rightWidget ??
                     (rightText == null
                         ? SizedBox(width: 36.ui, height: 36.ui)
                         : Text(
                             rightText!,
-                            style: const TextStyle(fontSize: 19.5, color: AppColors.textPrimary),
+                            style: const TextStyle(
+                              fontSize: 19.5,
+                              color: AppColors.textPrimary,
+                            ),
                           )),
               ),
             ],
@@ -3576,13 +4150,20 @@ class PlaceholderScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 title,
-                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 10),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 20, color: AppColors.textSecondary, height: 1.3),
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: AppColors.textSecondary,
+                  height: 1.3,
+                ),
               ),
             ],
           ),
