@@ -30,6 +30,7 @@ class AppAssets {
   static const digitalBankLogo = 'assets/logos/digital_bank_logo.png';
   static const easypaisaLogo = 'assets/logos/easypaisa_logo.png';
   static const easypaisaWordmark = 'assets/logos/easypaisa_wordmark.png';
+  static const easypaisaJpg = 'assets/logos/easypaisa.jpg';
   static const jazzCashBankLogo = 'assets/icons/jazzCash bank logo.jpg';
   static const easypisaBankLogo = 'assets/icons/easypisa bank logo.jpg';
   static const profileAvatar = 'assets/images/profile_avatar.png';
@@ -3305,12 +3306,12 @@ Future<void> showReceiptDialog(
                       ),
                       const SizedBox(height: 16),
                       const Center(
-                        child: Text(
-                          'easypaisa',
-                          style: TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                        child: SizedBox(
+                          width: 150,
+                          height: 40,
+                          child: Image(
+                            image: AssetImage(AppAssets.easypaisaJpg),
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
@@ -3329,7 +3330,7 @@ Future<void> showReceiptDialog(
                         child: Text(
                           'Money has been sent.',
                           style: TextStyle(
-                            fontSize: 22,
+                            fontSize: 18,
                             color: Color(0xFF9A9A9A),
                           ),
                         ),
@@ -3344,9 +3345,9 @@ Future<void> showReceiptDialog(
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'ID#51532053237',
+                        'ID#515320532390',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: Color(0xFF9A9A9A),
                         ),
                       ),
@@ -3354,7 +3355,7 @@ Future<void> showReceiptDialog(
                       const Text(
                         'Sent to',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -3362,7 +3363,7 @@ Future<void> showReceiptDialog(
                       Text(
                         recipientName,
                         style: const TextStyle(
-                          fontSize: 22,
+                          fontSize: 16,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
@@ -3370,7 +3371,7 @@ Future<void> showReceiptDialog(
                       Text(
                         recipientAccount,
                         style: const TextStyle(
-                          fontSize: 22,
+                          fontSize: 16,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
@@ -3378,7 +3379,7 @@ Future<void> showReceiptDialog(
                       Text(
                         bankName ?? 'Bank transfer',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 16,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
@@ -3386,23 +3387,23 @@ Future<void> showReceiptDialog(
                       const Text(
                         'Sent By',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Muhammad Junaid Ramzan',
+                        'Muhammad Junaid Hamza',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        '03146232976',
+                        '03144231975',
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 16,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
@@ -3410,7 +3411,7 @@ Future<void> showReceiptDialog(
                       const Text(
                         'Amount',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -3418,15 +3419,15 @@ Future<void> showReceiptDialog(
                       Text(
                         amount.toStringAsFixed(2),
                         style: const TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           color: Color(0xFF7D7D7D),
                         ),
                       ),
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 22),
                       const Text(
                         'Fee / Charge',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF8E8E8E),
                         ),
@@ -3435,7 +3436,7 @@ Future<void> showReceiptDialog(
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 26,
-                          vertical: 8,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF66C2FF),
@@ -3443,25 +3444,25 @@ Future<void> showReceiptDialog(
                         ),
                         child: const Text(
                           'Free',
-                          style: TextStyle(fontSize: 22, color: Colors.white),
+                          style: TextStyle(fontSize: 16, color: Colors.white),
                         ),
                       ),
                       const SizedBox(height: 22),
                       const Text(
                         'Total Amount',
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           color: AppColors.brandGreen,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 5),
                       Text(
                         'Rs. ${amount.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w500,
+                          color: Color.fromARGB(255, 67, 65, 73),
                         ),
                       ),
                       const SizedBox(height: 28),
@@ -3522,12 +3523,12 @@ class _ReceiptAction extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, size: 32, color: AppColors.textPrimary),
+          Icon(icon, size: 16, color: AppColors.textPrimary),
           const SizedBox(height: 14),
           Text(
             label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 20, color: Color(0xFF8D8D8D)),
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontSize: 16, color: Color(0xFF8D8D8D)),
           ),
         ],
       ),
