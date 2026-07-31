@@ -3265,6 +3265,39 @@ String _formatReceiptDateTime(DateTime dateTime) {
       '${hour.toString().padLeft(2, '0')}:$minute $period';
 }
 
+class _TornReceiptClipper extends CustomClipper<Path> {
+  const _TornReceiptClipper();
+
+  static const double tearDepth = 2;
+  static const double toothWidth = 3;
+
+  @override
+  Path getClip(Size size) {
+    final path = Path()..moveTo(0, tearDepth);
+
+    var index = 0;
+    for (double x = 0; x <= size.width; x += toothWidth) {
+      path.lineTo(x, index.isEven ? 0 : tearDepth);
+      index++;
+    }
+
+    path.lineTo(size.width, size.height - tearDepth);
+
+    index = 0;
+    for (double x = size.width; x >= 0; x -= toothWidth) {
+      path.lineTo(x, index.isEven ? size.height : size.height - tearDepth);
+      index++;
+    }
+
+    path.lineTo(0, tearDepth);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant _TornReceiptClipper oldClipper) => false;
+}
+
 Future<void> showReceiptDialog(
   BuildContext context, {
   required double amount,
@@ -3282,17 +3315,16 @@ Future<void> showReceiptDialog(
       return Center(
         child: Material(
           color: Colors.transparent,
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.92,
-            height: MediaQuery.of(context).size.height * 0.88,
-            decoration: BoxDecoration(
+          child: ClipPath(
+            clipper: const _TornReceiptClipper(),
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.92,
+              height: MediaQuery.of(context).size.height * 0.88,
               color: Colors.white,
-              borderRadius: BorderRadius.circular(2),
-            ),
-            child: Stack(
-              children: [
+              child: Stack(
+                children: [
                 SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(28, 28, 28, 22),
+                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 22),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -3497,7 +3529,8 @@ Future<void> showReceiptDialog(
                     icon: const Icon(Icons.close_rounded, size: 34),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
