@@ -778,7 +778,7 @@ class _HomeHeaderCluster extends StatelessWidget {
     const cardBoost = 1.12;
 
     final headerHeight = AppScale.v(122) * headerBoost;
-    final lowerPanelHeight = AppScale.v(88) * headerBoost;
+    final lowerPanelHeight = AppScale.v(55) * headerBoost;
     final cardTop = AppScale.v(82) * headerBoost;
 
     return SizedBox(
@@ -3155,197 +3155,209 @@ class TransferSuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  onPressed: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    size: 38,
-                    color: Color(0xFFBBBBBB),
+    void returnHome() {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+
+    return PopScope<void>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) returnHome();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    onPressed: returnHome,
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 38,
+                      color: Color(0xFFBBBBBB),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 40),
-            Center(
-              child: Container(
-                width: 55,
-                height: 55,
-                decoration: const BoxDecoration(
-                  color: Color.fromARGB(255, 17, 219, 118),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_rounded,
-                  color: Colors.white,
-                  size: 32,
+              const SizedBox(height: 40),
+              Center(
+                child: Container(
+                  width: 55,
+                  height: 55,
+                  decoration: const BoxDecoration(
+                    color: Color.fromARGB(255, 17, 219, 118),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 56),
-            Center(
-              child: RichText(
-                text: TextSpan(
-                  children: [
-                    WidgetSpan(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 22.0),
-                        child: const Text(
-                          'Rs ',
-                          style: TextStyle(
-                            fontFamily: 'Google Sans',
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
-                            color: Color.fromARGB(255, 14, 14, 15),
+              const SizedBox(height: 56),
+              Center(
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      WidgetSpan(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 22.0),
+                          child: const Text(
+                            'Rs ',
+                            style: TextStyle(
+                              fontFamily: 'Google Sans',
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: Color.fromARGB(255, 14, 14, 15),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    TextSpan(
-                      text: amount.toStringAsFixed(0),
-                      style: const TextStyle(
-                        fontFamily: 'Google Sanssf',
-                        fontSize: 52,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                        height: 1,
+                      TextSpan(
+                        text: amount.toStringAsFixed(0),
+                        style: const TextStyle(
+                          fontFamily: 'Google Sanssf',
+                          fontSize: 52,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                          height: 1,
+                        ),
                       ),
-                    ),
-                    const TextSpan(
-                      text: '.00',
-                      style: TextStyle(
-                        fontFamily: 'Google Sans',
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black,
-                        height: 1.2,
+                      const TextSpan(
+                        text: '.00',
+                        style: TextStyle(
+                          fontFamily: 'Google Sans',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Center(
+                child: Text(
+                  'Successfully Sent to',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Color.fromARGB(255, 14, 14, 15),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              Center(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(
+                        2,
+                      ), // Space between logo and border
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.brandGreen,
+                          width: 2,
+                        ),
+                      ),
+                      child: BankLogo(
+                        name: bankName,
+                        asset: logoAsset,
+                        fallbackColor: AppColors.brandGreen,
+                        size: 55,
+                        circle: true,
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 15),
-            const Center(
-              child: Text(
-                'Successfully Sent to',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Color.fromARGB(255, 14, 14, 15),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Center(
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(
-                      2,
-                    ), // Space between logo and border
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.brandGreen, width: 2),
-                    ),
-                    child: BankLogo(
-                      name: bankName,
-                      asset: logoAsset,
-                      fallbackColor: AppColors.brandGreen,
-                      size: 55,
-                      circle: true,
-                    ),
+              const SizedBox(height: 18),
+              Center(
+                child: Text(
+                  recipientName,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Color.fromARGB(255, 15, 14, 15),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Center(
-              child: Text(
-                recipientName,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Color.fromARGB(255, 15, 14, 15),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                recipientAccount,
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  recipientAccount,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
 
-            // const SizedBox(height: 26),
-            const SizedBox(height: 26),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 26),
-              child: Text(
-                'Important Details for you',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
+              // const SizedBox(height: 26),
+              const SizedBox(height: 26),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 26),
+                child: Text(
+                  'Important Details for you',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Container(height: 1, color: const Color(0xFFEDEDF1)),
-            const SizedBox(height: 20),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 26),
-              child: Text(
-                "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  height: 1.15,
+              const SizedBox(height: 8),
+              Container(height: 1, color: const Color(0xFFEDEDF1)),
+              const SizedBox(height: 20),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 26),
+                child: Text(
+                  "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    height: 1.15,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            _SuccessActionRow(
-              icon: Icons.receipt_long_outlined,
-              label: 'View Receipt',
-              onTap: () => showReceiptDialog(
-                context,
-                amount: amount,
-                bankName: bankName,
-                recipientName: recipientName,
-                recipientAccount: recipientAccount,
+              const SizedBox(height: 18),
+              _SuccessActionRow(
+                icon: Icons.receipt_long_outlined,
+                label: 'View Receipt',
+                onTap: () => showReceiptDialog(
+                  context,
+                  amount: amount,
+                  bankName: bankName,
+                  recipientName: recipientName,
+                  recipientAccount: recipientAccount,
+                ),
               ),
-            ),
-            _SuccessActionRow(
-              icon: Icons.share_outlined,
-              label: 'Share',
-              onTap: () => showReceiptDialog(
-                context,
-                amount: amount,
-                bankName: bankName,
-                recipientName: recipientName,
-                recipientAccount: recipientAccount,
+              _SuccessActionRow(
+                icon: Icons.share_outlined,
+                label: 'Share',
+                onTap: () => showReceiptDialog(
+                  context,
+                  amount: amount,
+                  bankName: bankName,
+                  recipientName: recipientName,
+                  recipientAccount: recipientAccount,
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
-          ],
+              const SizedBox(height: 14),
+            ],
+          ),
         ),
       ),
     );
