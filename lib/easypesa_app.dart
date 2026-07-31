@@ -1,8 +1,14 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:cross_file/cross_file.dart';
+import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AppColors {
   static const background = Color(0xFFF6F6F7);
@@ -1884,7 +1890,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
   final TextEditingController _purposeController = TextEditingController(
     text: 'Others',
   );
-  int _selectedReceiverDetail = 0;
+  final int _selectedReceiverDetail = 0;
 
   @override
   void dispose() {
@@ -2786,7 +2792,7 @@ class _FavoriteContactCard extends StatelessWidget {
                   ? const Icon(
                       Icons.check_rounded,
                       color: Colors.white,
-                      size: 26,
+                      size: 10,
                     )
                   : null,
             ),
@@ -3109,7 +3115,6 @@ class TransferSuccessScreen extends StatelessWidget {
                       circle: true,
                     ),
                   ),
-                  
                 ],
               ),
             ),
@@ -3135,8 +3140,8 @@ class TransferSuccessScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             // const SizedBox(height: 26),
-          
             const SizedBox(height: 26),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 26),
@@ -3217,7 +3222,11 @@ class _SuccessActionRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
             child: Row(
               children: [
-                Icon(icon, size: 29, color: const Color.fromARGB(255, 53, 52, 53)),
+                Icon(
+                  icon,
+                  size: 29,
+                  color: const Color.fromARGB(255, 53, 52, 53),
+                ),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Text(
@@ -3306,230 +3315,330 @@ Future<void> showReceiptDialog(
   required String recipientAccount,
 }) {
   final receiptDateTime = _formatReceiptDateTime(DateTime.now());
+  final receiptKey = GlobalKey();
+  var isProcessing = false;
+
+  Future<Uint8List> captureReceipt() async {
+    await WidgetsBinding.instance.endOfFrame;
+    final renderObject = receiptKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderRepaintBoundary) {
+      throw StateError('The receipt is not ready to capture.');
+    }
+
+    final image = await renderObject.toImage(pixelRatio: 3);
+    try {
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (data == null) {
+        throw StateError('Unable to create the receipt image.');
+      }
+      return data.buffer.asUint8List();
+    } finally {
+      image.dispose();
+    }
+  }
+
+  void showResultMessage(String message) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> runReceiptAction(
+    VoidCallback refresh,
+    Future<void> Function(Uint8List bytes) action,
+  ) async {
+    if (isProcessing) return;
+    isProcessing = true;
+    refresh();
+    try {
+      await action(await captureReceipt());
+    } catch (_) {
+      showResultMessage('Unable to process the receipt. Please try again.');
+    } finally {
+      isProcessing = false;
+      refresh();
+    }
+  }
+
   return showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Transaction Successful',
     barrierColor: Colors.black45,
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return Center(
-        child: Material(
-          color: Colors.transparent,
-          child: ClipPath(
-            clipper: const _TornReceiptClipper(),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.92,
-              height: MediaQuery.of(context).size.height * 0.88,
-              color: Colors.white,
-              child: Stack(
-                children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(28, 36, 28, 22),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      return StatefulBuilder(
+        builder: (dialogContext, setState) => Center(
+          child: Material(
+            color: Colors.transparent,
+            child: RepaintBoundary(
+              key: receiptKey,
+              child: ClipPath(
+                clipper: const _TornReceiptClipper(),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.92,
+                  height: MediaQuery.of(context).size.height * 0.88,
+                  color: Colors.white,
+                  child: Stack(
                     children: [
-                      const SizedBox(height: 18),
-                      const Center(
-                        child: Icon(
-                          Icons.check_circle,
-                          size: 52,
-                          color: AppColors.brandGreen,
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(28, 36, 28, 22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 18),
+                            const Center(
+                              child: Icon(
+                                Icons.check_circle,
+                                size: 52,
+                                color: AppColors.brandGreen,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Center(
+                              child: SizedBox(
+                                width: 150,
+                                height: 40,
+                                child: Image(
+                                  image: AssetImage(AppAssets.easypaisaJpg),
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            const Center(
+                              child: Text(
+                                'Transaction Successful',
+                                style: TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.brandGreen,
+                                ),
+                              ),
+                            ),
+                            const Center(
+                              child: Text(
+                                'Money has been sent.',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Color(0xFF9A9A9A),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 36),
+                            Text(
+                              receiptDateTime,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                color: Color(0xFF9A9A9A),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'ID#515320532390',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF9A9A9A),
+                              ),
+                            ),
+                            const SizedBox(height: 26),
+                            const Text(
+                              'Sent to',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              recipientName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              recipientAccount,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              bankName ?? 'Bank transfer',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 26),
+                            const Text(
+                              'Sent By',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Muhammad Junaid Hamza',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              '03144231975',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 26),
+                            const Text(
+                              'Amount',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              amount.toStringAsFixed(2),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Color(0xFF7D7D7D),
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            const Text(
+                              'Fee / Charge',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF8E8E8E),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 26,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF66C2FF),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                'Free',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            const Text(
+                              'Total Amount',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.brandGreen,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              'Rs. ${amount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w500,
+                                color: Color.fromARGB(255, 67, 65, 73),
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _ReceiptAction(
+                                  icon: Icons.share_outlined,
+                                  label: 'Share',
+                                  busy: isProcessing,
+                                  onTap: () => runReceiptAction(
+                                    () => setState(() {}),
+                                    (bytes) async {
+                                      final result = await Share.shareXFiles(
+                                        [
+                                          XFile.fromData(
+                                            bytes,
+                                            mimeType: 'image/png',
+                                          ),
+                                        ],
+                                        subject:
+                                            'easypaisa Transaction Receipt',
+                                        fileNameOverrides: const [
+                                          'easypaisa_transaction_receipt.png',
+                                        ],
+                                      );
+                                      if (result.status ==
+                                          ShareResultStatus.success) {
+                                        showResultMessage(
+                                          'Receipt shared successfully.',
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                _ReceiptAction(
+                                  icon: Icons.photo_outlined,
+                                  label: 'Save to Photos',
+                                  busy: isProcessing,
+                                  onTap: () => runReceiptAction(
+                                    () => setState(() {}),
+                                    (bytes) async {
+                                      var hasAccess = await Gal.hasAccess();
+                                      if (!hasAccess) {
+                                        hasAccess = await Gal.requestAccess();
+                                      }
+                                      if (!hasAccess) {
+                                        throw StateError(
+                                          'Gallery permission was denied.',
+                                        );
+                                      }
+                                      await Gal.putImageBytes(
+                                        bytes,
+                                        name: 'easypaisa_transaction_receipt',
+                                      );
+                                      showResultMessage(
+                                        'Receipt saved to Photos.',
+                                      );
+                                    },
+                                  ),
+                                ),
+                                _ReceiptAction(
+                                  icon: Icons.picture_as_pdf_outlined,
+                                  label: 'Save as PDF',
+                                  busy: false,
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      const Center(
-                        child: SizedBox(
-                          width: 150,
-                          height: 40,
-                          child: Image(
-                            image: AssetImage(AppAssets.easypaisaJpg),
-                            fit: BoxFit.contain,
-                          ),
+                      Positioned(
+                        right: 18,
+                        top: 14,
+                        child: IconButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          icon: const Icon(Icons.close_rounded, size: 34),
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      const Center(
-                        child: Text(
-                          'Transaction Successful',
-                          style: TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.brandGreen,
-                          ),
-                        ),
-                      ),
-                      const Center(
-                        child: Text(
-                          'Money has been sent.',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFF9A9A9A),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 36),
-                      Text(
-                        receiptDateTime,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          color: Color(0xFF9A9A9A),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'ID#515320532390',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF9A9A9A),
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      const Text(
-                        'Sent to',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        recipientName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        recipientAccount,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        bankName ?? 'Bank transfer',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      const Text(
-                        'Sent By',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Muhammad Junaid Hamza',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '03144231975',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      const Text(
-                        'Amount',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        amount.toStringAsFixed(2),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Color(0xFF7D7D7D),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      const Text(
-                        'Fee / Charge',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF8E8E8E),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 26,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF66C2FF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: const Text(
-                          'Free',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      const Text(
-                        'Total Amount',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.brandGreen,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Rs. ${amount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w500,
-                          color: Color.fromARGB(255, 67, 65, 73),
-                        ),
-                      ),
-                      const SizedBox(height: 28),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _ReceiptAction(
-                            icon: Icons.share_outlined,
-                            label: 'Share',
-                            onTap: () {},
-                          ),
-                          _ReceiptAction(
-                            icon: Icons.photo_outlined,
-                            label: 'Save to Photos',
-                            onTap: () {},
-                          ),
-                          _ReceiptAction(
-                            icon: Icons.picture_as_pdf_outlined,
-                            label: 'Save as PDF',
-                            onTap: () {},
-                          ),
-                        ],
                       ),
                     ],
                   ),
                 ),
-                Positioned(
-                  right: 18,
-                  top: 14,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    icon: const Icon(Icons.close_rounded, size: 34),
-                  ),
-                ),
-                ],
               ),
             ),
           ),
@@ -3544,11 +3653,13 @@ class _ReceiptAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    required this.busy,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -3556,7 +3667,11 @@ class _ReceiptAction extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, size: 16, color: AppColors.textPrimary),
+          Icon(
+            busy ? Icons.hourglass_top_rounded : icon,
+            size: 16,
+            color: AppColors.textPrimary,
+          ),
           const SizedBox(height: 14),
           Text(
             label,
