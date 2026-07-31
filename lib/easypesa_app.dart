@@ -555,6 +555,7 @@ class HomeScreen extends StatelessWidget {
             _HomeHeaderCluster(
               onSearch: () => onOpenPlaceholder('Search'),
               onNotifications: () => onOpenPlaceholder('Notifications'),
+              onLogout: () => onOpenPlaceholder('Logout'),
               onSignIn: onSendMoney,
             ),
             SizedBox(height: 18.ui),
@@ -761,11 +762,13 @@ class _HomeHeaderCluster extends StatelessWidget {
   const _HomeHeaderCluster({
     required this.onSearch,
     required this.onNotifications,
+    required this.onLogout,
     required this.onSignIn,
   });
 
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
+  final VoidCallback onLogout;
   final VoidCallback onSignIn;
 
   @override
@@ -790,6 +793,7 @@ class _HomeHeaderCluster extends StatelessWidget {
                 scale: heroBoost,
                 onSearch: onSearch,
                 onNotifications: onNotifications,
+                onLogout: onLogout,
               ),
               Container(
                 height: lowerPanelHeight,
@@ -816,12 +820,14 @@ class _HomeHero extends StatelessWidget {
     required this.scale,
     required this.onSearch,
     required this.onNotifications,
+    required this.onLogout,
   });
 
   final double height;
   final double scale;
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -884,13 +890,25 @@ class _HomeHero extends StatelessWidget {
           ),
           Positioned(
             top: 20.ui,
-            right: 52.ui,
+            right: 96.ui,
             child: IconButton(
               onPressed: onSearch,
               icon: Icon(
                 Icons.search_rounded,
                 color: AppColors.textPrimary,
-                size: 21.ui * scale * HomeScale.factor,
+                size: 27.3.ui * scale * HomeScale.factor,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20.ui,
+            right: 52.ui,
+            child: IconButton(
+              onPressed: onNotifications,
+              icon: Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.textPrimary,
+                size: 27.3.ui * scale * HomeScale.factor,
               ),
             ),
           ),
@@ -898,11 +916,11 @@ class _HomeHero extends StatelessWidget {
             top: 20.ui,
             right: 8.ui,
             child: IconButton(
-              onPressed: onNotifications,
+              onPressed: onLogout,
               icon: Icon(
-                Icons.notifications_none_rounded,
-                color: AppColors.textPrimary,
-                size: 21.ui * scale * HomeScale.factor,
+                Icons.logout_rounded,
+                color: AppColors.danger,
+                size: 27.3.ui * scale * HomeScale.factor,
               ),
             ),
           ),
@@ -1005,115 +1023,173 @@ class _AccountCard extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.fromLTRB(
-        10.5.ui * scale,
-        10.5.ui * scale,
-        10.5.ui * scale,
-        10.5.ui * scale,
+        16.ui * scale,
+        14.ui * scale,
+        16.ui * scale,
+        16.ui * scale,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Align(
-            alignment: Alignment.topLeft,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: 9.ui * scale,
-                vertical: 6.ui * scale,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 9.ui * scale,
+                  vertical: 6.ui * scale,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6.ui * scale),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                      size: 16.ui * scale * HomeScale.factor,
+                    ),
+                    SizedBox(width: 6.ui * scale),
+                    Text(
+                      'easypaisa Account',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12 * scale,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6.ui * scale),
-              ),
-              child: Row(
+              const Spacer(),
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.account_balance_wallet_outlined,
-                    color: Colors.white,
-                    size: 13.5.ui * scale * HomeScale.factor,
-                  ),
-                  SizedBox(width: 6.ui * scale),
                   Text(
-                    'easypaisa Account',
+                    'My Rewards',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.97),
+                      color: Colors.white,
+                      fontSize: 15 * scale,
                       fontWeight: FontWeight.w700,
-                      fontSize: 12 * scale,
+                    ),
+                  ),
+                  SizedBox(width: 8.ui * scale),
+                  Container(
+                    width: 28.ui * scale,
+                    height: 28.ui * scale,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFC107),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.star_rounded,
+                      color: Color(0xFFFFE082),
+                      size: 18.ui * scale,
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-          SizedBox(height: 13.5.ui * scale),
-          Text(
-            'MUHAMMAD JUNAID RAMZAN',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 11 * scale,
-              fontWeight: FontWeight.w400,
-              letterSpacing: 0.2,
-            ),
-          ),
-          SizedBox(height: 4.5.ui * scale),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: '*******',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21 * scale,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                  ),
-                ),
-                TextSpan(
-                  text: '2976',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22 * scale,
-                    fontWeight: FontWeight.w500,
-                    height: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 9.ui * scale),
+          SizedBox(height: 18.ui * scale),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Expanded(
-                child: Text(
-                  'Sign in to your easypaisa Account',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11 * scale,
-                    height: 1.15,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Available Balance',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13 * scale,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 5.ui * scale),
+                    Row(
+                      children: [
+                        Text(
+                          'Rs. 24,590',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 27 * scale,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(width: 8.ui * scale),
+                        Icon(
+                          Icons.visibility_off_outlined,
+                          color: Colors.white,
+                          size: 23.ui * scale,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 3.ui * scale),
+                    Text(
+                      'Tap to hide balance',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12 * scale,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: 7.5.ui * scale),
-              SizedBox(
-                width: 109.ui * scale,
-                child: FilledButton(
-                  onPressed: onSignIn,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.brandGreen,
-                    foregroundColor: Colors.white,
-                    minimumSize: Size.fromHeight(30.ui * scale),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.ui * scale),
+              SizedBox(width: 8.ui * scale),
+              Column(
+                children: [
+                  SizedBox(
+                    width: 110.ui * scale,
+                    child: OutlinedButton(
+                      onPressed: onSignIn,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(
+                          color: AppColors.brandGreen,
+                          width: 1.5.ui * scale,
+                        ),
+                        minimumSize: Size.fromHeight(30.ui * scale),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.ui * scale),
+                        ),
+                      ),
+                      child: Text(
+                        'Upgrade Account',
+                        style: TextStyle(
+                          fontSize: 10.5 * scale,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                  child: Text(
-                    'Sign-In',
-                    style: TextStyle(
-                      fontSize: 11 * scale,
-                      fontWeight: FontWeight.w500,
+                  SizedBox(height: 10.ui * scale),
+                  SizedBox(
+                    width: 110.ui * scale,
+                    child: FilledButton(
+                      onPressed: onSignIn,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brandGreen,
+                        foregroundColor: Colors.white,
+                        minimumSize: Size.fromHeight(30.ui * scale),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.ui * scale),
+                        ),
+                      ),
+                      child: Text(
+                        'Add Cash',
+                        style: TextStyle(
+                          fontSize: 12 * scale,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
