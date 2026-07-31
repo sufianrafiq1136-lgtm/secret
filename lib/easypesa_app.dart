@@ -33,7 +33,7 @@ class AppColors {
 }
 
 class AppAssets {
-  static const digitalBankLogo = 'assets/logos/digital_bank_logo.png';
+  static const digitalBankLogo = 'assets/logos/Header digital bank logo .png';
   static const easypaisaLogo = 'assets/logos/easypaisa_logo.png';
   static const easypaisaWordmark = 'assets/logos/easypaisa_wordmark.png';
   static const easypaisaJpg = 'assets/logos/easypaisa.jpg';
@@ -43,9 +43,9 @@ class AppAssets {
   static const jazzCash = 'assets/brands/jazzcash.png';
   static const easypaisaWallet = 'assets/brands/easypaisa_wallet.png';
   static const moneyBag = 'assets/icons/money_bag.jpg';
-  static const sendMoney = 'assets/icons/send_money.png';
-  static const billPayment = 'assets/icons/bill_payment.png';
-  static const mobilePackages = 'assets/icons/mobile_packages.png';
+  static const sendMoney = 'assets/icons/Send Money icon.png';
+  static const billPayment = 'assets/icons/Bill Payment.png';
+  static const mobilePackages = 'assets/icons/Mobile Packages .png';
   static const easypaisaTransfer = 'assets/icons/easypaisa_transfer.png';
   static const bankTransfer = 'assets/icons/bank_transfer.png';
   static const cnicTransfer = 'assets/icons/cnic_transfer.png';
@@ -56,6 +56,17 @@ class AppAssets {
   static const onlineCard = 'assets/icons/online_card.png';
   static const plasticCard = 'assets/icons/plastic_card.png';
   static const walletIcon = 'assets/icons/wallet_icon.png';
+  static const easyload = 'assets/icons/Easyload.png';
+  static const easycashLoan = 'assets/icons/Easycash Loan.png';
+  static const savingsPocket = 'assets/icons/Savings Pocket.png';
+  static const inviteAndEarn = 'assets/icons/Invite & Earn.png';
+  static const donations = 'assets/icons/Donations.png';
+  static const termDeposit = 'assets/icons/Term Deposit.png';
+  static const dailyRewards = 'assets/icons/Daily Rewards.png';
+  static const buyNowPayLater = 'assets/icons/Buy Now Pay Later.png';
+  static const insuranceMarketplace = 'assets/icons/Insurance Marketplace.png';
+  static const mTag = 'assets/icons/M-Tag.png';
+  static const rsOneGame = 'assets/icons/Rs .1 Game.png';
 }
 
 String formatRs(double value) => value.toStringAsFixed(2);
@@ -588,68 +599,68 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         FeatureTile(
                           title: 'Easyload',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.easyload,
                           fallbackIcon: Icons.add_card_outlined,
                           onTap: () => onOpenPlaceholder('Easyload'),
                         ),
                         FeatureTile(
                           title: 'Easycash\nLoan',
-                          asset: AppAssets.wallet,
+                          asset: AppAssets.easycashLoan,
                           fallbackIcon: Icons.volunteer_activism_outlined,
                           onTap: () => onOpenPlaceholder('Easycash Loan'),
                         ),
                         FeatureTile(
                           title: 'Savings\nPocket',
-                          asset: AppAssets.walletIcon,
+                          asset: AppAssets.savingsPocket,
                           fallbackIcon: Icons.savings_outlined,
                           onTap: () => onOpenPlaceholder('Savings Pocket'),
                         ),
                         FeatureTile(
                           title: 'Invite\n& Earn',
-                          asset: AppAssets.sendMoney,
+                          asset: AppAssets.inviteAndEarn,
                           fallbackIcon: Icons.people_outline_rounded,
                           onTap: () => onOpenPlaceholder('Invite & Earn'),
                         ),
                         FeatureTile(
                           title: 'Donations',
-                          asset: AppAssets.wallet,
+                          asset: AppAssets.donations,
                           fallbackIcon: Icons.volunteer_activism_outlined,
                           onTap: () => onOpenPlaceholder('Donations'),
                         ),
                         FeatureTile(
                           title: 'Term\nDeposit',
-                          asset: AppAssets.walletIcon,
+                          asset: AppAssets.termDeposit,
                           fallbackIcon: Icons.account_balance_wallet_outlined,
                           onTap: () => onOpenPlaceholder('Term Deposit'),
                         ),
                         FeatureTile(
                           title: 'Daily\nRewards',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.dailyRewards,
                           fallbackIcon: Icons.card_giftcard_outlined,
                           onTap: () => onOpenPlaceholder('Daily Rewards'),
                         ),
                         FeatureTile(
                           title: 'Buy Now\nPay Later',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.buyNowPayLater,
                           fallbackIcon: Icons.calendar_month_outlined,
                           onTap: () => onOpenPlaceholder('Buy Now Pay Later'),
                         ),
                         FeatureTile(
                           title: 'Insurance\nMarketplace',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.insuranceMarketplace,
                           fallbackIcon: Icons.umbrella_outlined,
                           onTap: () =>
                               onOpenPlaceholder('Insurance Marketplace'),
                         ),
                         FeatureTile(
                           title: 'M-Tag',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.mTag,
                           fallbackIcon: Icons.route_outlined,
                           onTap: () => onOpenPlaceholder('M-Tag'),
                         ),
                         FeatureTile(
                           title: 'Rs.1 Game',
-                          asset: AppAssets.quickCard,
+                          asset: AppAssets.rsOneGame,
                           fallbackIcon: Icons.celebration_outlined,
                           onTap: () => onOpenPlaceholder('Rs.1 Game'),
                         ),
@@ -823,12 +834,12 @@ class _HomeHero extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 16.ui,
+            top: 0.ui,
             left: 0,
             right: 0,
             child: Center(
               child: SizedBox(
-                height: 48.ui * scale * HomeScale.factor,
+                height: 96.ui * scale * HomeScale.factor,
                 child: Image.asset(
                   AppAssets.digitalBankLogo,
                   fit: BoxFit.contain,
@@ -1107,6 +1118,7 @@ class QuickActionCard extends StatelessWidget {
           height: 93.ui,
           padding: EdgeInsets.fromLTRB(6.ui, 9.ui, 6.ui, 7.5.ui),
           decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(18.ui),
             boxShadow: const [
               BoxShadow(
@@ -1124,7 +1136,7 @@ class QuickActionCard extends StatelessWidget {
                   child: AssetOrIcon(
                     asset: asset,
                     fallbackIcon: fallbackIcon,
-                    size: 31.5.ui * HomeScale.factor,
+                    size: 63.ui * HomeScale.factor,
                     color: AppColors.textPrimary,
                   ),
                 ),
@@ -1173,7 +1185,7 @@ class FeatureTile extends StatelessWidget {
           AssetOrIcon(
             asset: asset,
             fallbackIcon: fallbackIcon,
-            size: 30.ui * HomeScale.factor,
+            size: 60.ui * HomeScale.factor,
             color: AppColors.textPrimary,
           ),
           SizedBox(height: 4.5.ui),
@@ -4128,7 +4140,7 @@ class _EasyPaisaFallback extends StatelessWidget {
 }
 
 class DigitalBankWordmark extends StatelessWidget {
-  const DigitalBankWordmark({super.key, this.height = 76});
+  const DigitalBankWordmark({super.key, this.height = 152});
 
   final double height;
 
