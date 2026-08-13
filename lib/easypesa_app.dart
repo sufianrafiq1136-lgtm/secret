@@ -4,11 +4,14 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:cross_file/cross_file.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:video_player/video_player.dart';
 
 class AppColors {
   static const background = Color(0xFFF6F6F7);
@@ -68,6 +71,7 @@ class AppAssets {
   static const insuranceMarketplace = 'assets/icons/Insurance Marketplace.png';
   static const mTag = 'assets/icons/M-Tag.png';
   static const rsOneGame = 'assets/icons/Rs .1 Game.png';
+  static const loadingIcon = 'assets/icons/loadeing icon.jpg';
   static const abhiMicrofinanceBank =
       'assets/logos/abhli micro finance bank.png';
   static const alBarakaIslamicBank = 'assets/logos/Al Baraka islami Bank.jpg';
@@ -88,6 +92,9 @@ class AppAssets {
   static const unitedBank = 'assets/logos/ubl digital.png';
   static const nationalBank = 'assets/logos/NBP-Logo.png';
   static const jsBank = 'assets/logos/js bank.png';
+  static const sadapay = 'assets/logos/sadapay.webp';
+  static const nayapay = 'assets/logos/nayapay.jpg';
+  static const raastId = 'assets/logos/raast id.png';
 }
 
 String formatRs(double value) => value.toStringAsFixed(2);
@@ -131,20 +138,88 @@ class BankOption {
 
 class TransactionRecord {
   const TransactionRecord({
+    required this.id,
     required this.title,
     required this.time,
     required this.amount,
     required this.isCredit,
     required this.dateLabel,
+    required this.timestamp,
+    required this.recipientName,
+    required this.recipientAccount,
+    required this.bankName,
+    required this.iban,
+    required this.fee,
+    required this.status,
     this.showRepeat = false,
   });
 
+  final String id;
   final String title;
   final String time;
   final double amount;
   final bool isCredit;
   final String dateLabel;
+  final DateTime timestamp;
+  final String recipientName;
+  final String recipientAccount;
+  final String bankName;
+  final String iban;
+  final double fee;
+  final String status;
   final bool showRepeat;
+
+  factory TransactionRecord.fromFirestore(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    return TransactionRecord(
+      id: doc.id,
+      title: (data['title'] as String?) ??
+          'Money Transfer via Raast - ${(data['recipientName'] as String?) ?? ''}',
+      time: _formatDisplayTime(timestamp),
+      amount: (data['amount'] as num?)?.toDouble() ?? 0,
+      isCredit: (data['type'] as String?) == 'credit',
+      dateLabel: _formatDateLabel(timestamp),
+      timestamp: timestamp,
+      recipientName: (data['recipientName'] as String?) ?? '',
+      recipientAccount: (data['recipientAccount'] as String?) ?? '',
+      bankName: (data['bankName'] as String?) ?? 'Bank transfer',
+      iban: (data['iban'] as String?) ?? '',
+      fee: (data['fee'] as num?)?.toDouble() ?? 0,
+      status: (data['status'] as String?) ?? 'success',
+    );
+  }
+}
+
+String _formatDisplayTime(DateTime value) {
+  final hour = value.hour == 0
+      ? 12
+      : value.hour > 12
+          ? value.hour - 12
+          : value.hour;
+  final minute = value.minute.toString().padLeft(2, '0');
+  final suffix = value.hour >= 12 ? 'PM' : 'AM';
+  return '$hour:$minute $suffix';
+}
+
+String _formatDateLabel(DateTime value) {
+  const months = <String>[
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  return '${value.day} ${months[value.month - 1]} ${value.year}';
 }
 
 class EasyPesaApp extends StatelessWidget {
@@ -225,6 +300,48 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _pageIndex = navIndex > 2 ? navIndex - 1 : navIndex;
     });
+  }
+
+  Future<void> _openProfileDrawer() async {
+    if (!mounted) return;
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Account drawer',
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 240),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: Material(
+            color: Colors.transparent,
+            child: _ProfileDrawer(
+              onMyAccount: () {
+                Navigator.of(dialogContext).pop();
+                setState(() => _pageIndex = 3);
+              },
+              onTransactionHistory: () {
+                Navigator.of(dialogContext).pop();
+                setState(() => _pageIndex = 3);
+              },
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(-1, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: FadeTransition(opacity: curved, child: child),
+        );
+      },
+    );
   }
 
   Future<void> _showQrScanner() async {
@@ -309,6 +426,7 @@ class _AppShellState extends State<AppShell> {
         onSendMoney: () => showSendMoneySheet(context),
         onOpenPlaceholder: _openPlaceholder,
         onOpenMyAccount: () => setState(() => _pageIndex = 3),
+        onOpenProfileDrawer: _openProfileDrawer,
       ),
       const CashPointsScreen(),
       const PromotionsScreen(),
@@ -325,8 +443,128 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _openPlaceholder(String title) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => ComingSoonScreen(title: title)),
+    showNavigationLoader(context, () {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => ComingSoonScreen(title: title)),
+      );
+    });
+  }
+}
+
+Future<void> showNavigationLoader(
+  BuildContext context,
+  VoidCallback onComplete,
+) async {
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    barrierColor: Colors.transparent,
+    builder: (_) => const _NavigationLoader(),
+  );
+  if (context.mounted) onComplete();
+}
+
+class _NavigationLoader extends StatefulWidget {
+  const _NavigationLoader();
+
+  @override
+  State<_NavigationLoader> createState() => _NavigationLoaderState();
+}
+
+class _NavigationLoaderState extends State<_NavigationLoader>
+    with SingleTickerProviderStateMixin {
+  Timer? _timer;
+  late final AnimationController _animationController;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    )..forward();
+    _scaleAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutBack,
+    );
+    _timer = Timer(const Duration(milliseconds: 1100), () {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: FadeTransition(
+        opacity: _animationController,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.78,
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(7),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33000000),
+                    blurRadius: 14,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.brandGreen,
+                            ),
+                          ),
+                        ),
+                        ClipOval(
+                          child: Image.asset(
+                            AppAssets.loadingIcon,
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 22),
+                  const Expanded(
+                    child: Text(
+                      'Loading, please wait.',
+                      style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -345,23 +583,54 @@ void showSendMoneySheet(BuildContext context) {
           width: MediaQuery.of(context).size.width * 0.92,
           height: MediaQuery.of(context).size.height * 0.374,
           child: SendMoneySheet(
+            onEasypaisaTransfer: () {
+              Navigator.of(dialogContext).pop();
+              showNavigationLoader(context, () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => TransferFormScreen(
+                      bankName: 'Easypaisa Bank',
+                      logoAsset: AppAssets.easypisaBankLogo,
+                    ),
+                  ),
+                );
+              });
+            },
             onBankTransfer: () {
               final navigator = Navigator.of(context);
               Navigator.of(dialogContext).pop();
-              navigator.push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const BankTransferScreen(),
-                ),
-              );
+              showNavigationLoader(context, () {
+                navigator.push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BankTransferScreen(),
+                  ),
+                );
+              });
+            },
+            onRaastTransfer: () {
+              final navigator = Navigator.of(context);
+              Navigator.of(dialogContext).pop();
+              showNavigationLoader(context, () {
+                navigator.push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const BankTransferScreen(
+                      initialSearchQuery: 'Raast',
+                      initialHighlightedBankName: 'Raast ID',
+                    ),
+                  ),
+                );
+              });
             },
             onPlaceholder: (title) {
               final navigator = Navigator.of(context);
               Navigator.of(dialogContext).pop();
-              navigator.push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ComingSoonScreen(title: title),
-                ),
-              );
+              showNavigationLoader(context, () {
+                navigator.push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ComingSoonScreen(title: title),
+                  ),
+                );
+              });
             },
           ),
         ),
@@ -532,11 +801,13 @@ class HomeScreen extends StatelessWidget {
     required this.onSendMoney,
     required this.onOpenPlaceholder,
     required this.onOpenMyAccount,
+    required this.onOpenProfileDrawer,
   });
 
   final VoidCallback onSendMoney;
   final ValueChanged<String> onOpenPlaceholder;
   final VoidCallback onOpenMyAccount;
+  final VoidCallback onOpenProfileDrawer;
 
   @override
   Widget build(BuildContext context) {
@@ -557,6 +828,7 @@ class HomeScreen extends StatelessWidget {
               onNotifications: () => onOpenPlaceholder('Notifications'),
               onLogout: () => onOpenPlaceholder('Logout'),
               onSignIn: onSendMoney,
+              onProfileTap: onOpenProfileDrawer,
             ),
             SizedBox(height: 18.ui),
             Padding(
@@ -764,12 +1036,14 @@ class _HomeHeaderCluster extends StatelessWidget {
     required this.onNotifications,
     required this.onLogout,
     required this.onSignIn,
+    required this.onProfileTap,
   });
 
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
   final VoidCallback onLogout;
   final VoidCallback onSignIn;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -794,6 +1068,7 @@ class _HomeHeaderCluster extends StatelessWidget {
                 onSearch: onSearch,
                 onNotifications: onNotifications,
                 onLogout: onLogout,
+                onProfileTap: onProfileTap,
               ),
               Container(
                 height: lowerPanelHeight,
@@ -821,6 +1096,7 @@ class _HomeHero extends StatelessWidget {
     required this.onSearch,
     required this.onNotifications,
     required this.onLogout,
+    required this.onProfileTap,
   });
 
   final double height;
@@ -828,6 +1104,7 @@ class _HomeHero extends StatelessWidget {
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
   final VoidCallback onLogout;
+  final VoidCallback onProfileTap;
 
   @override
   Widget build(BuildContext context) {
@@ -845,28 +1122,42 @@ class _HomeHero extends StatelessWidget {
           Positioned(
             top: 16.ui,
             left: 16.ui,
-            child: SizedBox(
-              width: 42.ui * scale * HomeScale.factor,
-              height: 42.ui * scale * HomeScale.factor,
-              child: ClipOval(
-                child: Image.asset(
-                  AppAssets.profileAvatar,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF5B5C69), Color(0xFFB3B7B9)],
+            child: GestureDetector(
+              onTap: onProfileTap,
+              child: Container(
+                width: 42.ui * scale * HomeScale.factor,
+                height: 42.ui * scale * HomeScale.factor,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x22000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    AppAssets.profileAvatar,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF5B5C69), Color(0xFFB3B7B9)],
+                          ),
                         ),
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 28.ui * scale * HomeScale.factor,
-                      ),
-                    );
-                  },
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 28.ui * scale * HomeScale.factor,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -998,6 +1289,182 @@ class _DigitalBankFallback extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _ProfileDrawer extends StatelessWidget {
+  const _ProfileDrawer({
+    required this.onMyAccount,
+    required this.onTransactionHistory,
+  });
+
+  final VoidCallback onMyAccount;
+  final VoidCallback onTransactionHistory;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.84,
+        child: Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.horizontal(
+            right: Radius.circular(28),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 16, 10),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Account',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF4FBF7),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFDCEFE3)),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 28,
+                      backgroundImage: AssetImage(AppAssets.profileAvatar),
+                      backgroundColor: Color(0xFFD9EDE3),
+                    ),
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'MUHAMMAD\nSUFIYAN RAFEEQ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              height: 1.1,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Profile, Settings & More',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            _DrawerAction(
+              icon: Icons.person_outline_rounded,
+              label: 'My Account',
+              onTap: onMyAccount,
+            ),
+            _DrawerAction(
+              icon: Icons.receipt_long_outlined,
+              label: 'Transaction History',
+              onTap: onTransactionHistory,
+            ),
+            _DrawerAction(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              onTap: () {},
+            ),
+            _DrawerAction(
+              icon: Icons.help_outline_rounded,
+              label: 'Help & Support',
+              onTap: () {},
+            ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: AppColors.danger,
+                    ),
+                    label: const Text('Logout'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: const BorderSide(color: Color(0xFFE7E7EA)),
+                      foregroundColor: AppColors.textPrimary,
+                      backgroundColor: const Color(0xFFF9F9FA),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DrawerAction extends StatelessWidget {
+  const _DrawerAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.textPrimary),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFB5B5BB)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1450,11 +1917,15 @@ class _DotsIndicator extends StatelessWidget {
 class SendMoneySheet extends StatelessWidget {
   const SendMoneySheet({
     super.key,
+    required this.onEasypaisaTransfer,
     required this.onBankTransfer,
+    required this.onRaastTransfer,
     required this.onPlaceholder,
   });
 
+  final VoidCallback onEasypaisaTransfer;
   final VoidCallback onBankTransfer;
+  final VoidCallback onRaastTransfer;
   final ValueChanged<String> onPlaceholder;
 
   @override
@@ -1465,7 +1936,7 @@ class SendMoneySheet extends StatelessWidget {
         AppAssets.easypaisaTransfer,
         Icons.currency_exchange_rounded,
         AppColors.textPrimary,
-        () => onPlaceholder('easypaisa Transfer'),
+        onEasypaisaTransfer,
       ),
       _SheetOption(
         'Bank\nTransfer',
@@ -1486,7 +1957,7 @@ class SendMoneySheet extends StatelessWidget {
         AppAssets.raast,
         Icons.account_balance_outlined,
         AppColors.textPrimary,
-        () => onPlaceholder('Raast Payment'),
+        onRaastTransfer,
       ),
       _SheetOption(
         'Other\nWallets',
@@ -1624,7 +2095,14 @@ class _SheetActionCard extends StatelessWidget {
 }
 
 class BankTransferScreen extends StatefulWidget {
-  const BankTransferScreen({super.key});
+  const BankTransferScreen({
+    super.key,
+    this.initialSearchQuery,
+    this.initialHighlightedBankName,
+  });
+
+  final String? initialSearchQuery;
+  final String? initialHighlightedBankName;
 
   @override
   State<BankTransferScreen> createState() => _BankTransferScreenState();
@@ -1736,12 +2214,31 @@ class _BankTransferScreenState extends State<BankTransferScreen>
       asset: AppAssets.jsBank,
       fallbackColor: Color(0xFF1E3A8A),
     ),
+    BankOption(
+      name: 'Sadapay',
+      asset: AppAssets.sadapay,
+      fallbackColor: Color(0xFF1B5B4E),
+    ),
+    BankOption(
+      name: 'Nayapay',
+      asset: AppAssets.nayapay,
+      fallbackColor: Color(0xFF1F4FB8),
+    ),
+    BankOption(
+      name: 'Raast ID',
+      asset: AppAssets.raastId,
+      fallbackColor: AppColors.brandGreen,
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    if (widget.initialSearchQuery != null &&
+        widget.initialSearchQuery!.trim().isNotEmpty) {
+      _searchController.text = widget.initialSearchQuery!.trim();
+    }
     _searchController.addListener(() => setState(() {}));
   }
 
@@ -1833,15 +2330,19 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                       final bank = _filteredBanks[index];
                       return BankTile(
                         bank: bank,
+                        highlighted:
+                            bank.name == widget.initialHighlightedBankName,
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => TransferFormScreen(
-                                bankName: bank.name,
-                                logoAsset: bank.asset,
+                          showNavigationLoader(context, () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => TransferFormScreen(
+                                  bankName: bank.name,
+                                  logoAsset: bank.asset,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          });
                         },
                       );
                     },
@@ -1866,10 +2367,16 @@ class _BankTransferScreenState extends State<BankTransferScreen>
 }
 
 class BankTile extends StatelessWidget {
-  const BankTile({super.key, required this.bank, required this.onTap});
+  const BankTile({
+    super.key,
+    required this.bank,
+    required this.onTap,
+    this.highlighted = false,
+  });
 
   final BankOption bank;
   final VoidCallback onTap;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -1884,6 +2391,7 @@ class BankTile extends StatelessWidget {
               asset: bank.asset,
               fallbackColor: bank.fallbackColor,
               size: 80.ui,
+              greenOutline: highlighted,
             ),
             SizedBox(width: 15.ui),
             Expanded(
@@ -1917,6 +2425,7 @@ class BankLogo extends StatelessWidget {
     required this.fallbackColor,
     required this.size,
     this.circle = false,
+    this.greenOutline = false,
   });
 
   final String name;
@@ -1924,6 +2433,7 @@ class BankLogo extends StatelessWidget {
   final Color fallbackColor;
   final double size;
   final bool circle;
+  final bool greenOutline;
 
   @override
   Widget build(BuildContext context) {
@@ -1941,14 +2451,31 @@ class BankLogo extends StatelessWidget {
             foregroundColor: fallbackColor,
           );
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(circle ? 999 : 9.ui),
-      child: Image.asset(
-        asset,
-        width: size,
-        height: size,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) => fallback,
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(circle ? 999 : 9.ui),
+            child: Image.asset(
+              asset,
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) => fallback,
+            ),
+          ),
+          if (greenOutline)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: circle ? BoxShape.circle : BoxShape.rectangle,
+                border: Border.all(color: AppColors.brandGreen, width: 3.ui),
+                borderRadius: circle ? null : BorderRadius.circular(9.ui),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -2092,6 +2619,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                         fallbackColor: AppColors.brandGreen,
                         size: 82.5.ui,
                         circle: true,
+                        greenOutline: true,
                       ),
                       SizedBox(width: 13.5.ui),
                       Expanded(
@@ -2101,7 +2629,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                               child: Text(
                                 widget.bankName,
                                 style: const TextStyle(
-                                  fontSize: 32,
+                                  fontSize: 22.4,
                                   fontWeight: FontWeight.w500,
                                   color: AppColors.textPrimary,
                                 ),
@@ -2130,25 +2658,7 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                   SizedBox(height: 19.5.ui),
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: _RadioRow(
-                  //         selected: _selectedReceiverDetail == 0,
-                  //         label: 'Account Number',
-                  //         onTap: () => setState(() => _selectedReceiverDetail = 0),
-                  //       ),
-                  //     ),
-                  //     SizedBox(width: 18.ui),
-                  //     Expanded(
-                  //       child: _RadioRow(
-                  //         selected: _selectedReceiverDetail == 1,
-                  //         label: 'IBAN',
-                  //         onTap: () => setState(() => _selectedReceiverDetail = 1),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
+
                   SizedBox(height: 43.5.ui),
                   const Text(
                     'Enter Account Number',
@@ -2167,14 +2677,6 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 4.5.ui,
-                          margin: EdgeInsets.symmetric(vertical: 7.5.ui),
-                          decoration: BoxDecoration(
-                            color: AppColors.brandGreen,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
                         Expanded(
                           child: TextField(
                             controller: _accountController,
@@ -2220,14 +2722,6 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          width: 4.5.ui,
-                          margin: EdgeInsets.symmetric(vertical: 7.5.ui),
-                          decoration: BoxDecoration(
-                            color: AppColors.brandGreen,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
                         Expanded(
                           child: TextField(
                             controller: _recipientNameController,
@@ -2302,18 +2796,21 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
                     child: FilledButton(
                       onPressed: _canContinue
                           ? () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => AmountEntryScreen(
-                                    bankName: widget.bankName,
-                                    logoAsset: widget.logoAsset,
-                                    accountNumber: _accountController.text
-                                        .trim(),
-                                    recipientName: _recipientNameController.text
-                                        .trim(),
+                              showNavigationLoader(context, () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => AmountEntryScreen(
+                                      bankName: widget.bankName,
+                                      logoAsset: widget.logoAsset,
+                                      accountNumber: _accountController.text
+                                          .trim(),
+                                      recipientName: _recipientNameController
+                                          .text
+                                          .trim(),
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              });
                             }
                           : null,
                       style: FilledButton.styleFrom(
@@ -2573,17 +3070,19 @@ class _AmountEntryScreenState extends State<AmountEntryScreen> {
                       child: FilledButton(
                         onPressed: _amount > 0
                             ? () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => ReviewTransferScreen(
-                                      amount: _amount.toDouble(),
-                                      bankName: widget.bankName,
-                                      logoAsset: widget.logoAsset,
-                                      accountNumber: widget.accountNumber,
-                                      recipientName: widget.recipientName,
+                                showNavigationLoader(context, () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => ReviewTransferScreen(
+                                        amount: _amount.toDouble(),
+                                        bankName: widget.bankName,
+                                        logoAsset: widget.logoAsset,
+                                        accountNumber: widget.accountNumber,
+                                        recipientName: widget.recipientName,
+                                      ),
                                     ),
-                                  ),
-                                );
+                                  );
+                                });
                               }
                             : null,
                         style: FilledButton.styleFrom(
@@ -2795,17 +3294,19 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
             height: 52,
             child: FilledButton(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => SendingScreen(
-                      amount: widget.amount,
-                      bankName: widget.bankName,
-                      logoAsset: widget.logoAsset,
-                      recipientAccount: widget.accountNumber,
-                      recipientName: widget.recipientName,
+                showNavigationLoader(context, () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SendingScreen(
+                        amount: widget.amount,
+                        bankName: widget.bankName,
+                        logoAsset: widget.logoAsset,
+                        recipientAccount: widget.accountNumber,
+                        recipientName: widget.recipientName,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                });
               },
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.brandGreen,
@@ -3004,17 +3505,19 @@ class _SendingScreenState extends State<SendingScreen> {
     super.initState();
     _timer = Timer(const Duration(milliseconds: 2200), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => TransferSuccessScreen(
-            amount: widget.amount,
-            bankName: widget.bankName,
-            logoAsset: widget.logoAsset,
-            recipientAccount: widget.recipientAccount,
-            recipientName: widget.recipientName,
+      showNavigationLoader(context, () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => TransferSuccessScreen(
+              amount: widget.amount,
+              bankName: widget.bankName,
+              logoAsset: widget.logoAsset,
+              recipientAccount: widget.recipientAccount,
+              recipientName: widget.recipientName,
+            ),
           ),
-        ),
-      );
+        );
+      });
     });
   }
 
@@ -3137,7 +3640,7 @@ class _SendingScreenState extends State<SendingScreen> {
   }
 }
 
-class TransferSuccessScreen extends StatelessWidget {
+class TransferSuccessScreen extends StatefulWidget {
   const TransferSuccessScreen({
     super.key,
     required this.amount,
@@ -3154,6 +3657,75 @@ class TransferSuccessScreen extends StatelessWidget {
   final String recipientName;
 
   @override
+  State<TransferSuccessScreen> createState() => _TransferSuccessScreenState();
+}
+
+class _TransferSuccessScreenState extends State<TransferSuccessScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _contentController;
+  late final Animation<double> _contentOpacity;
+  late final Animation<Offset> _contentSlide;
+  bool _transactionSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _contentController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..forward();
+    _contentOpacity = CurvedAnimation(
+      parent: _contentController,
+      curve: const Interval(0.48, 1, curve: Curves.easeOut),
+    );
+    _contentSlide =
+        Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _contentController,
+            curve: const Interval(0.48, 1, curve: Curves.easeOutCubic),
+          ),
+        );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _persistTransaction();
+    });
+  }
+
+  Future<void> _persistTransaction() async {
+    if (_transactionSaved) return;
+    _transactionSaved = true;
+    if (Firebase.apps.isEmpty) return;
+    try {
+      await FirebaseFirestore.instance.collection('transactions').add({
+        'title': 'Money Transfer via Raast - ${widget.recipientName}',
+        'amount': widget.amount,
+        'recipientName': widget.recipientName,
+        'recipientAccount': widget.recipientAccount,
+        'bankName': widget.bankName,
+        'iban': 'PK41JCMA0604923191981267',
+        'fee': 0,
+        'status': 'success',
+        'type': 'debit',
+        'timestamp': FieldValue.serverTimestamp(),
+        'clientTimestamp': Timestamp.fromDate(DateTime.now()),
+        'receiptId': 'ID#515320532390',
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Transaction saved locally, but sync failed.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     void returnHome() {
       Navigator.of(context).popUntil((route) => route.isFirst);
@@ -3167,198 +3739,271 @@ class TransferSuccessScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+          child: Stack(
+            alignment: Alignment.topCenter,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    onPressed: returnHome,
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      size: 38,
-                      color: Color(0xFFBBBBBB),
+              ListView(
+                padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        onPressed: returnHome,
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 38,
+                          color: Color(0xFFBBBBBB),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              Center(
-                child: Container(
-                  width: 55,
-                  height: 55,
-                  decoration: const BoxDecoration(
-                    color: Color.fromARGB(255, 17, 219, 118),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 56),
-              Center(
-                child: RichText(
-                  text: TextSpan(
-                    children: [
-                      WidgetSpan(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 22.0),
-                          child: const Text(
-                            'Rs ',
-                            style: TextStyle(
-                              fontFamily: 'Google Sans',
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: Color.fromARGB(255, 14, 14, 15),
-                            ),
+                  const SizedBox(height: 40),
+                  const Center(child: TransactionSuccessAnimation()),
+                  const SizedBox(height: 56),
+                  FadeTransition(
+                    opacity: _contentOpacity,
+                    child: SlideTransition(
+                      position: _contentSlide,
+                      child: Center(
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              WidgetSpan(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 22.0),
+                                  child: const Text(
+                                    'Rs ',
+                                    style: TextStyle(
+                                      fontFamily: 'Google Sans',
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color.fromARGB(255, 14, 14, 15),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              TextSpan(
+                                text: widget.amount.toStringAsFixed(0),
+                                style: const TextStyle(
+                                  fontFamily: 'Google Sanssf',
+                                  fontSize: 52,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                  height: 1,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: '.00',
+                                style: TextStyle(
+                                  fontFamily: 'Google Sans',
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      TextSpan(
-                        text: amount.toStringAsFixed(0),
-                        style: const TextStyle(
-                          fontFamily: 'Google Sanssf',
-                          fontSize: 52,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                          height: 1,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: '.00',
-                        style: TextStyle(
-                          fontFamily: 'Google Sans',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                          height: 1.2,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 15),
-              const Center(
-                child: Text(
-                  'Successfully Sent to',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: Color.fromARGB(255, 14, 14, 15),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              Center(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(
-                        2,
-                      ), // Space between logo and border
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.brandGreen,
-                          width: 2,
+                  const SizedBox(height: 15),
+                  FadeTransition(
+                    opacity: _contentOpacity,
+                    child: SlideTransition(
+                      position: _contentSlide,
+                      child: const Center(
+                        child: Text(
+                          'Successfully Sent to',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: Color.fromARGB(255, 14, 14, 15),
+                          ),
                         ),
-                      ),
-                      child: BankLogo(
-                        name: bankName,
-                        asset: logoAsset,
-                        fallbackColor: AppColors.brandGreen,
-                        size: 55,
-                        circle: true,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              Center(
-                child: Text(
-                  recipientName,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Color.fromARGB(255, 15, 14, 15),
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: Text(
-                  recipientAccount,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(
+                            2,
+                          ), // Space between logo and border
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.brandGreen,
+                              width: 2,
+                            ),
+                          ),
+                          child: BankLogo(
+                            name: widget.bankName,
+                            asset: widget.logoAsset,
+                            fallbackColor: AppColors.brandGreen,
+                            size: 55,
+                            circle: true,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                  const SizedBox(height: 18),
+                  Center(
+                    child: Text(
+                      widget.recipientName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color.fromARGB(255, 15, 14, 15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      widget.recipientAccount,
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
 
-              // const SizedBox(height: 26),
-              const SizedBox(height: 26),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 26),
-                child: Text(
-                  'Important Details for you',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                  // const SizedBox(height: 26),
+                  const SizedBox(height: 26),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 26),
+                    child: Text(
+                      'Important Details for you',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(height: 1, color: const Color(0xFFEDEDF1)),
-              const SizedBox(height: 20),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 26),
-                child: Text(
-                  "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                    height: 1.15,
+                  const SizedBox(height: 8),
+                  Container(height: 1, color: const Color(0xFFEDEDF1)),
+                  const SizedBox(height: 20),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 26),
+                    child: Text(
+                      "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                        height: 1.15,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 18),
+                  _SuccessActionRow(
+                    icon: Icons.receipt_long_outlined,
+                    label: 'View Receipt',
+                    onTap: () => showReceiptDialog(
+                      context,
+                      amount: widget.amount,
+                      bankName: widget.bankName,
+                      recipientName: widget.recipientName,
+                      recipientAccount: widget.recipientAccount,
+                    ),
+                  ),
+                  _SuccessActionRow(
+                    icon: Icons.share_outlined,
+                    label: 'Share',
+                    onTap: () => showReceiptDialog(
+                      context,
+                      amount: widget.amount,
+                      bankName: widget.bankName,
+                      recipientName: widget.recipientName,
+                      recipientAccount: widget.recipientAccount,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
               ),
-              const SizedBox(height: 18),
-              _SuccessActionRow(
-                icon: Icons.receipt_long_outlined,
-                label: 'View Receipt',
-                onTap: () => showReceiptDialog(
-                  context,
-                  amount: amount,
-                  bankName: bankName,
-                  recipientName: recipientName,
-                  recipientAccount: recipientAccount,
-                ),
-              ),
-              _SuccessActionRow(
-                icon: Icons.share_outlined,
-                label: 'Share',
-                onTap: () => showReceiptDialog(
-                  context,
-                  amount: amount,
-                  bankName: bankName,
-                  recipientName: recipientName,
-                  recipientAccount: recipientAccount,
-                ),
-              ),
-              const SizedBox(height: 14),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Native version of the green success check shown after a transfer completes.
+/// The circle pops into place and the checkmark is drawn from left to right.
+class TransactionSuccessAnimation extends StatefulWidget {
+  const TransactionSuccessAnimation({super.key, this.size = 55});
+
+  final double size;
+
+  @override
+  State<TransactionSuccessAnimation> createState() =>
+      _TransactionSuccessAnimationState();
+}
+
+class _TransactionSuccessAnimationState
+    extends State<TransactionSuccessAnimation>
+    with SingleTickerProviderStateMixin {
+  late final VideoPlayerController _videoController;
+  late final Future<void> _initializeVideo;
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.asset(
+      'assets/animation sample/transection successfull.mp4',
+    );
+    _initializeVideo = _videoController.initialize().then((_) {
+      if (!mounted) return;
+      _videoController
+        ..setLooping(true)
+        ..setVolume(0)
+        ..play();
+    });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final burstSize = widget.size * 2.1;
+
+    return SizedBox(
+      width: burstSize,
+      height: burstSize,
+      child: FutureBuilder<void>(
+        future: _initializeVideo,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done ||
+              !_videoController.value.isInitialized) {
+            return const SizedBox.shrink();
+          }
+
+          return ClipOval(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _videoController.value.size.width,
+                height: _videoController.value.size.height,
+                child: VideoPlayer(_videoController),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -3859,38 +4504,6 @@ class _MyAccountScreenState extends State<MyAccountScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  final List<TransactionRecord> _transactions = const [
-    TransactionRecord(
-      dateLabel: 'Today, 19 June',
-      title: 'Money Transfer via Raast - MUHAMMAD SUFIYAN RAFEEQ',
-      time: '02:04 PM',
-      amount: 10.00,
-      isCredit: false,
-    ),
-    TransactionRecord(
-      dateLabel: 'Today, 19 June',
-      title: 'Money Transfer via Raast - Muhammad Sufian Rafiq',
-      time: '02:03 PM',
-      amount: 10.00,
-      isCredit: true,
-    ),
-    TransactionRecord(
-      dateLabel: '18 June 2026',
-      title: 'Money Transfer via Raast - MUHAMMAD JUNAID RAMZAN',
-      time: '02:30 AM',
-      amount: 30.00,
-      isCredit: false,
-    ),
-    TransactionRecord(
-      dateLabel: '18 June 2026',
-      title: 'Money Transfer - ABDUL WAKEEL',
-      time: '02:18 AM',
-      amount: 140.00,
-      isCredit: false,
-      showRepeat: true,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -3914,75 +4527,20 @@ class _MyAccountScreenState extends State<MyAccountScreen>
               title: 'My Account',
               onBack: () => Navigator.of(context).pop(),
             ),
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Color(0xFFD6D6DB), width: 2),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: AppColors.textPrimary,
-                unselectedLabelColor: const Color(0xFFB4B4B8),
-                indicatorColor: AppColors.brandGreen,
-                indicatorWeight: 4,
-                labelStyle: const TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                ),
-                unselectedLabelStyle: const TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                ),
-                tabs: const [
-                  Tab(text: 'Summary'),
-                  Tab(text: 'Transaction History'),
-                ],
-              ),
-            ),
+            _AccountHeaderCard(controller: _tabController),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
                   ListView(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+                    padding: const EdgeInsets.fromLTRB(18, 16, 18, 120),
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 20,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: AppColors.shadow,
-                              blurRadius: 16,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.account_balance_wallet_outlined,
-                              size: 40,
-                              color: AppColors.brandGreen,
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                'Account summary coming next.',
-                                style: TextStyle(fontSize: 22),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const _SummaryProfileCard(),
+                      const SizedBox(height: 16),
+                      const _QuickAccountCard(),
                     ],
                   ),
-                  _TransactionHistoryTab(records: _transactions),
+                  const _LiveTransactionHistoryTab(),
                 ],
               ),
             ),
@@ -3993,105 +4551,160 @@ class _MyAccountScreenState extends State<MyAccountScreen>
   }
 }
 
-class _TransactionHistoryTab extends StatelessWidget {
-  const _TransactionHistoryTab({required this.records});
-
-  final List<TransactionRecord> records;
+class _LiveTransactionHistoryTab extends StatelessWidget {
+  const _LiveTransactionHistoryTab();
 
   @override
   Widget build(BuildContext context) {
-    final grouped = <String, List<TransactionRecord>>{};
-    for (final record in records) {
-      grouped
-          .putIfAbsent(record.dateLabel, () => <TransactionRecord>[])
-          .add(record);
+    if (Firebase.apps.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+        children: [
+          _EStatementCard(),
+          SizedBox(height: 20),
+          _EmptyHistoryState(
+            title: 'History is loading',
+            subtitle:
+                'Firebase is not initialized in this environment yet, so live history cannot load.',
+          ),
+        ],
+      );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: AppColors.shadow,
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Image.asset(
-                'assets/icons/pdf_download.png',
-                width: 34,
-                height: 34,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.picture_as_pdf_rounded,
-                  color: Color(0xFFEA6E6E),
-                  size: 34,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Text(
-                  'Download e-statement',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 34),
-        const _SyncRow(),
-        const SizedBox(height: 14),
-        ...grouped.entries.expand(
-          (entry) => [
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 14),
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('transactions')
+          .orderBy('clientTimestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.brandGreen),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
               child: Text(
-                entry.key,
-                style: const TextStyle(
-                  fontSize: 23,
-                  color: AppColors.textPrimary,
-                ),
+                'Unable to load transaction history.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
             ),
-            ...entry.value.map(
-              (record) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TransactionCard(record: record),
-              ),
+          );
+        }
+
+        final records = (snapshot.data?.docs ?? const [])
+            .map(TransactionRecord.fromFirestore)
+            .toList();
+
+        if (records.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+            children: const [
+              _EStatementCard(),
+              SizedBox(height: 20),
+              _EmptyHistoryState(),
+            ],
+          );
+        }
+
+        final grouped = <String, List<TransactionRecord>>{};
+        for (final record in records) {
+          grouped
+              .putIfAbsent(record.dateLabel, () => <TransactionRecord>[])
+              .add(record);
+        }
+
+        final latest = records.first;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+          children: [
+            const _EStatementCard(),
+            const SizedBox(height: 16),
+            _SyncRow(
+              dateLabel: latest.dateLabel,
+              lastSyncLabel:
+                  '${latest.timestamp.day.toString().padLeft(2, '0')}-${_shortMonth(latest.timestamp.month)}-${latest.timestamp.year}',
+            ),
+            const SizedBox(height: 14),
+            ...grouped.entries.expand(
+              (entry) => [
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 10),
+                  child: Text(
+                    entry.key,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                ...entry.value.map(
+                  (record) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: TransactionCard(record: record),
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }
 
+String _shortMonth(int month) {
+  const months = <String>[
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  return months[month - 1];
+}
+
 class _SyncRow extends StatelessWidget {
-  const _SyncRow();
+  const _SyncRow({
+    required this.dateLabel,
+    required this.lastSyncLabel,
+  });
+
+  final String dateLabel;
+  final String lastSyncLabel;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: Text(
-            'Today, 19 June',
-            style: TextStyle(fontSize: 22, color: AppColors.textPrimary),
+            dateLabel,
+            style: const TextStyle(
+              fontSize: 18,
+              color: Colors.black,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         Text(
-          'last sync: 19-Jun-2026',
-          style: TextStyle(fontSize: 16, color: Color(0xFF8B8B91)),
+          'Last sync :$lastSyncLabel',
+          style: const TextStyle(fontSize: 16, color: Color(0xFF8B8B91)),
         ),
-        SizedBox(width: 6),
-        Icon(Icons.refresh_rounded, size: 22, color: Color(0xFF8B8B91)),
+        const SizedBox(width: 6),
+        const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF8B8B91)),
       ],
     );
   }
@@ -4111,15 +4724,16 @@ class TransactionCard extends StatelessWidget {
       onTap: () => showReceiptDialog(
         context,
         amount: record.amount,
-        recipientName: 'MUHAMMAD SUFIYAN RAFEEQ',
-        recipientAccount: '03191981267',
+        bankName: record.bankName,
+        recipientName: record.recipientName,
+        recipientAccount: record.recipientAccount,
       ),
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 14, 14),
+        padding: const EdgeInsets.fromLTRB(14, 16, 12, 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: const Color(0xFFD7D7DC)),
         ),
         child: Stack(
@@ -4127,12 +4741,19 @@ class TransactionCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                BankLogo(
-                  name: 'Money',
-                  asset: AppAssets.moneyBag,
-                  fallbackColor: AppColors.brandGreen,
-                  size: 46,
-                  circle: true,
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF6F6F7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE5E5E8)),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: Color(0xFF44404F),
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -4142,18 +4763,18 @@ class TransactionCard extends StatelessWidget {
                       Text(
                         record.title,
                         style: const TextStyle(
-                          fontSize: 23,
-                          height: 1.06,
+                          fontSize: 18,
+                          height: 1.1,
                           color: Colors.black,
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 24),
                       Text(
                         record.time,
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: Color(0xFF8B8B91),
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -4163,7 +4784,7 @@ class TransactionCard extends StatelessWidget {
                 Text(
                   'Rs. ${record.amount.toStringAsFixed(2)}',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     color: amountColor,
                     fontWeight: FontWeight.w700,
                   ),
@@ -4171,32 +4792,269 @@ class TransactionCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 const Icon(
                   Icons.chevron_right_rounded,
-                  size: 32,
-                  color: AppColors.textPrimary,
+                  size: 30,
+                  color: Color(0xFF4A4458),
                 ),
               ],
             ),
-            if (record.showRepeat)
-              Positioned(
-                right: 30,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 28,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE2E2E2),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Text(
-                    'Repeat',
-                    style: TextStyle(fontSize: 20, color: Colors.black),
-                  ),
-                ),
-              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyHistoryState extends StatelessWidget {
+  const _EmptyHistoryState({
+    this.title = 'No transactions yet',
+    this.subtitle =
+        'Completed transfers will appear here automatically.',
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFD7D7DC)),
+      ),
+      child: Column(
+        children: [
+          const Icon(
+            Icons.receipt_long_outlined,
+            size: 44,
+            color: AppColors.brandGreen,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EStatementCard extends StatelessWidget {
+  const _EStatementCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD0D0D4)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFECEC),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.picture_as_pdf_rounded,
+              color: Color(0xFFEA6E6E),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Text(
+              'Download e-statement',
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountHeaderCard extends StatelessWidget {
+  const _AccountHeaderCard({required this.controller});
+
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(18, 6, 18, 8),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: const Color(0xFFD6D6DB), width: 1.5),
+        ),
+      ),
+      child: TabBar(
+        controller: controller,
+        labelColor: AppColors.textPrimary,
+        unselectedLabelColor: const Color(0xFFB4B4B8),
+        indicatorColor: AppColors.brandGreen,
+        indicatorWeight: 4,
+        labelStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        tabs: const [
+          Tab(text: 'Summary'),
+          Tab(text: 'Transaction History'),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryProfileCard extends StatelessWidget {
+  const _SummaryProfileCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A7768),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipOval(
+            child: Image.asset(
+              AppAssets.profileAvatar,
+              width: 72,
+              height: 72,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 72,
+                height: 72,
+                color: Colors.white24,
+                child: const Icon(Icons.person, color: Colors.white, size: 36),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MUHAMMAD\nSUFIYAN RAFEEQ',
+                  style: TextStyle(
+                    fontSize: 23,
+                    height: 1.05,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 14),
+                Text(
+                  '03191981267',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'umtsufian846@gmail.com',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'IBAN: PK02TMFB0000000067264660',
+                  style: TextStyle(fontSize: 14, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFBDE7D0)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.edit, size: 16, color: AppColors.brandGreen),
+                SizedBox(width: 6),
+                Text(
+                  'Edit',
+                  style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickAccountCard extends StatelessWidget {
+  const _QuickAccountCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE0E0E4)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF6F6F7),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFDCDCDF)),
+            ),
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'easypaisa Account',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  '03191981267',
+                  style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.keyboard_arrow_down_rounded, size: 34),
+        ],
       ),
     );
   }

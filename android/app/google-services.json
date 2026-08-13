@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "708422490930",
+    "project_id": "easypaisa-33115",
+    "storage_bucket": "easypaisa-33115.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:708422490930:android:7cc912bf79bb735169952b",
+        "android_client_info": {
+          "package_name": "com.example.easypesa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7SeUmwX6JF_sSBffYFQDJlcxdzIEMW1k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
