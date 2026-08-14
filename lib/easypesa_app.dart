@@ -430,7 +430,7 @@ class _AppShellState extends State<AppShell> {
       ),
       const CashPointsScreen(),
       const PromotionsScreen(),
-      const MyAccountScreen(),
+      MyAccountScreen(onBackToHome: () => setState(() => _pageIndex = 0)),
     ];
 
     return Scaffold(
@@ -608,15 +608,24 @@ void showSendMoneySheet(BuildContext context) {
               });
             },
             onRaastTransfer: () {
-              final navigator = Navigator.of(context);
               Navigator.of(dialogContext).pop();
               showNavigationLoader(context, () {
-                navigator.push(
+                Navigator.of(context).push(
                   MaterialPageRoute<void>(
-                    builder: (_) => const BankTransferScreen(
-                      initialSearchQuery: 'Raast',
-                      initialHighlightedBankName: 'Raast ID',
+                    builder: (_) => TransferFormScreen(
+                      bankName: 'Raast ID',
+                      logoAsset: AppAssets.raastId,
                     ),
+                  ),
+                );
+              });
+            },
+            onOtherWallets: () {
+              Navigator.of(dialogContext).pop();
+              showNavigationLoader(context, () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const OtherWalletsScreen(),
                   ),
                 );
               });
@@ -1920,12 +1929,14 @@ class SendMoneySheet extends StatelessWidget {
     required this.onEasypaisaTransfer,
     required this.onBankTransfer,
     required this.onRaastTransfer,
+    required this.onOtherWallets,
     required this.onPlaceholder,
   });
 
   final VoidCallback onEasypaisaTransfer;
   final VoidCallback onBankTransfer;
   final VoidCallback onRaastTransfer;
+  final VoidCallback onOtherWallets;
   final ValueChanged<String> onPlaceholder;
 
   @override
@@ -1964,7 +1975,7 @@ class SendMoneySheet extends StatelessWidget {
         AppAssets.otherWallets,
         Icons.account_balance_wallet_outlined,
         AppColors.textPrimary,
-        () => onPlaceholder('Other Wallets'),
+        onOtherWallets,
       ),
       _SheetOption(
         'Scan QR',
@@ -2357,6 +2368,90 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class OtherWalletsScreen extends StatelessWidget {
+  const OtherWalletsScreen({super.key});
+
+  static const List<BankOption> _wallets = [
+    BankOption(
+      name: 'JazzCash',
+      asset: AppAssets.jazzCash,
+      fallbackColor: AppColors.brandGreen,
+    ),
+    BankOption(
+      name: 'Sadapay',
+      asset: AppAssets.sadapay,
+      fallbackColor: Color(0xFF1B5B4E),
+    ),
+    BankOption(
+      name: 'Nayapay',
+      asset: AppAssets.nayapay,
+      fallbackColor: Color(0xFF1F4FB8),
+    ),
+    BankOption(
+      name: 'U Microfinance Bank',
+      asset: AppAssets.uMicrofinanceBank,
+      fallbackColor: Color(0xFF1D6C91),
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            SimpleAppBar(
+              title: 'Other Wallets',
+              onBack: () => Navigator.of(context).pop(),
+            ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 4, 16, 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select a wallet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(10, 6, 10, 12),
+                itemCount: _wallets.length,
+                separatorBuilder: (_, _) =>
+                    const Divider(height: 1, color: Color(0xFFEDEDF1)),
+                itemBuilder: (context, index) {
+                  final wallet = _wallets[index];
+                  return BankTile(
+                    bank: wallet,
+                    onTap: () {
+                      showNavigationLoader(context, () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => TransferFormScreen(
+                              bankName: wallet.name,
+                              logoAsset: wallet.asset,
+                            ),
+                          ),
+                        );
+                      });
+                    },
+                  );
+                },
               ),
             ),
           ],
@@ -3760,8 +3855,8 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                     ),
                   ),
                   const SizedBox(height: 40),
-                  const Center(child: TransactionSuccessAnimation()),
-                  const SizedBox(height: 56),
+                  const Center(child: _SuccessBadge()),
+                  const SizedBox(height: 26),
                   FadeTransition(
                     opacity: _contentOpacity,
                     child: SlideTransition(
@@ -3941,69 +4036,22 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
 
 /// Native version of the green success check shown after a transfer completes.
 /// The circle pops into place and the checkmark is drawn from left to right.
-class TransactionSuccessAnimation extends StatefulWidget {
-  const TransactionSuccessAnimation({super.key, this.size = 55});
-
-  final double size;
-
-  @override
-  State<TransactionSuccessAnimation> createState() =>
-      _TransactionSuccessAnimationState();
-}
-
-class _TransactionSuccessAnimationState
-    extends State<TransactionSuccessAnimation>
-    with SingleTickerProviderStateMixin {
-  late final VideoPlayerController _videoController;
-  late final Future<void> _initializeVideo;
-
-  @override
-  void initState() {
-    super.initState();
-    _videoController = VideoPlayerController.asset(
-      'assets/animation sample/transection successfull.mp4',
-    );
-    _initializeVideo = _videoController.initialize().then((_) {
-      if (!mounted) return;
-      _videoController
-        ..setLooping(true)
-        ..setVolume(0)
-        ..play();
-    });
-  }
-
-  @override
-  void dispose() {
-    _videoController.dispose();
-    super.dispose();
-  }
+class _SuccessBadge extends StatelessWidget {
+  const _SuccessBadge();
 
   @override
   Widget build(BuildContext context) {
-    final burstSize = widget.size * 2.1;
-
-    return SizedBox(
-      width: burstSize,
-      height: burstSize,
-      child: FutureBuilder<void>(
-        future: _initializeVideo,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done ||
-              !_videoController.value.isInitialized) {
-            return const SizedBox.shrink();
-          }
-
-          return ClipOval(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController.value.size.width,
-                height: _videoController.value.size.height,
-                child: VideoPlayer(_videoController),
-              ),
-            ),
-          );
-        },
+    return Container(
+      width: 92,
+      height: 92,
+      decoration: const BoxDecoration(
+        color: AppColors.brandGreen,
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.check_rounded,
+        color: Colors.white,
+        size: 54,
       ),
     );
   }
@@ -4494,7 +4542,9 @@ class _ReceiptAction extends StatelessWidget {
 }
 
 class MyAccountScreen extends StatefulWidget {
-  const MyAccountScreen({super.key});
+  const MyAccountScreen({super.key, required this.onBackToHome});
+
+  final VoidCallback onBackToHome;
 
   @override
   State<MyAccountScreen> createState() => _MyAccountScreenState();
@@ -4525,7 +4575,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
           children: [
             SimpleAppBar(
               title: 'My Account',
-              onBack: () => Navigator.of(context).pop(),
+              onBack: widget.onBackToHome,
             ),
             _AccountHeaderCard(controller: _tabController),
             Expanded(
