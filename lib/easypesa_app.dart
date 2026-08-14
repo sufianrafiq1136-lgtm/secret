@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -138,6 +139,98 @@ class BankOption {
   final String name;
   final String asset;
   final Color fallbackColor;
+}
+
+class FavoriteRecipient {
+  const FavoriteRecipient({
+    required this.recipientName,
+    required this.accountNumber,
+    required this.bankName,
+    required this.logoAsset,
+    required this.savedAtMs,
+  });
+
+  final String recipientName;
+  final String accountNumber;
+  final String bankName;
+  final String logoAsset;
+  final int savedAtMs;
+
+  String get id => '${bankName.toLowerCase()}|$accountNumber';
+
+  Map<String, dynamic> toJson() => {
+    'recipientName': recipientName,
+    'accountNumber': accountNumber,
+    'bankName': bankName,
+    'logoAsset': logoAsset,
+    'savedAtMs': savedAtMs,
+  };
+
+  factory FavoriteRecipient.fromJson(Map<String, dynamic> json) {
+    return FavoriteRecipient(
+      recipientName: (json['recipientName'] as String?) ?? '',
+      accountNumber: (json['accountNumber'] as String?) ?? '',
+      bankName: (json['bankName'] as String?) ?? '',
+      logoAsset: (json['logoAsset'] as String?) ?? '',
+      savedAtMs: (json['savedAtMs'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
+class FavoriteRecipientsStore {
+  static const _prefsKey = 'favorite_recipients_v1';
+
+  static Future<List<FavoriteRecipient>> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKey);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      final parsed = decoded
+          .whereType<Map>()
+          .map(
+            (entry) => FavoriteRecipient.fromJson(
+              Map<String, dynamic>.from(entry),
+            ),
+          )
+          .where(
+            (item) =>
+                item.recipientName.trim().isNotEmpty &&
+                item.accountNumber.trim().isNotEmpty &&
+                item.bankName.trim().isNotEmpty,
+          )
+          .toList();
+      parsed.sort((a, b) => b.savedAtMs.compareTo(a.savedAtMs));
+      return parsed;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static Future<void> upsert(FavoriteRecipient recipient) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await load();
+    final next = [
+      recipient,
+      ...current.where((item) => item.id != recipient.id),
+    ];
+    final serialized = jsonEncode(next.take(20).map((item) => item.toJson()).toList());
+    await prefs.setString(_prefsKey, serialized);
+  }
+
+  static Future<bool> contains({
+    required String bankName,
+    required String accountNumber,
+  }) async {
+    final current = await load();
+    final normalizedBank = bankName.toLowerCase();
+    return current.any(
+      (item) =>
+          item.bankName.toLowerCase() == normalizedBank &&
+          item.accountNumber == accountNumber,
+    );
+  }
 }
 
 class TransactionRecord {
@@ -2329,6 +2422,7 @@ class _BankTransferScreenState extends State<BankTransferScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   late final TabController _tabController;
+  List<FavoriteRecipient> _favoriteRecipients = const [];
 
   final List<BankOption> _banks = const [
     BankOption(
@@ -2452,11 +2546,13 @@ class _BankTransferScreenState extends State<BankTransferScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() => setState(() {}));
     if (widget.initialSearchQuery != null &&
         widget.initialSearchQuery!.trim().isNotEmpty) {
       _searchController.text = widget.initialSearchQuery!.trim();
     }
     _searchController.addListener(() => setState(() {}));
+    _loadFavorites();
   }
 
   @override
@@ -2472,6 +2568,78 @@ class _BankTransferScreenState extends State<BankTransferScreen>
     return _banks
         .where((bank) => bank.name.toLowerCase().contains(query))
         .toList();
+  }
+
+  Future<void> _loadFavorites() async {
+    final favorites = await FavoriteRecipientsStore.load();
+    if (!mounted) return;
+    setState(() {
+      _favoriteRecipients = favorites;
+    });
+  }
+
+  void _openFavoriteRecipient(FavoriteRecipient favorite) {
+    showNavigationLoader(context, () {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => TransferFormScreen(
+            bankName: favorite.bankName,
+            logoAsset: favorite.logoAsset,
+            initialAccountNumber: favorite.accountNumber,
+            initialRecipientName: favorite.recipientName,
+          ),
+        ),
+      );
+    }).then((_) => _loadFavorites());
+  }
+
+  void _showAllFavorites() {
+    if (_favoriteRecipients.isEmpty) return;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+            itemCount: _favoriteRecipients.length,
+            separatorBuilder: (_, _) =>
+                const Divider(height: 1, color: Color(0xFFEDEDF1)),
+            itemBuilder: (context, index) {
+              final favorite = _favoriteRecipients[index];
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.brandGreen.withValues(alpha: 0.12),
+                  child: Text(
+                    initialsFor(favorite.recipientName),
+                    style: const TextStyle(
+                      color: AppColors.brandGreenDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  favorite.recipientName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text('${favorite.bankName} • ${favorite.accountNumber}'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _openFavoriteRecipient(favorite);
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -2505,6 +2673,108 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                 Tab(text: 'History'),
               ],
             ),
+            if (_tabController.index == 0) ...[
+              SizedBox(height: 12.ui),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15.ui),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'My Bank Favourites',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _favoriteRecipients.isEmpty
+                          ? null
+                          : _showAllFavorites,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                      ),
+                      child: const Text(
+                        'See All',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 120.ui,
+                child: _favoriteRecipients.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No favourites yet',
+                          style: TextStyle(
+                            fontSize: 16.ui,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: 15.ui),
+                        itemCount: _favoriteRecipients.length,
+                        separatorBuilder: (_, _) => SizedBox(width: 18.ui),
+                        itemBuilder: (context, index) {
+                          final favorite = _favoriteRecipients[index];
+                          return InkWell(
+                            onTap: () {
+                              _openFavoriteRecipient(favorite);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: SizedBox(
+                              width: 80.ui,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 54.ui,
+                                    height: 54.ui,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.brandGreen,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        initialsFor(favorite.recipientName),
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 6.ui),
+                                  Text(
+                                    favorite.recipientName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14.ui,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
             SizedBox(height: 10.5.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 15.ui),
@@ -3232,10 +3502,14 @@ class TransferFormScreen extends StatefulWidget {
     super.key,
     required this.bankName,
     required this.logoAsset,
+    this.initialAccountNumber,
+    this.initialRecipientName,
   });
 
   final String bankName;
   final String logoAsset;
+  final String? initialAccountNumber;
+  final String? initialRecipientName;
 
   @override
   State<TransferFormScreen> createState() => _TransferFormScreenState();
@@ -3249,6 +3523,13 @@ class _TransferFormScreenState extends State<TransferFormScreen> {
     text: 'Others',
   );
   final int _selectedReceiverDetail = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _accountController.text = widget.initialAccountNumber ?? '';
+    _recipientNameController.text = widget.initialRecipientName ?? '';
+  }
 
   @override
   void dispose() {
@@ -3815,6 +4096,21 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
   bool _favorite = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadFavoriteStatus();
+  }
+
+  Future<void> _loadFavoriteStatus() async {
+    final isFavorite = await FavoriteRecipientsStore.contains(
+      bankName: widget.bankName,
+      accountNumber: widget.accountNumber,
+    );
+    if (!mounted) return;
+    setState(() => _favorite = isFavorite);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F8),
@@ -3982,6 +4278,7 @@ class _ReviewTransferScreenState extends State<ReviewTransferScreen> {
                         logoAsset: widget.logoAsset,
                         recipientAccount: widget.accountNumber,
                         recipientName: widget.recipientName,
+                        markAsFavorite: _favorite,
                       ),
                     ),
                   );
@@ -4164,6 +4461,7 @@ class SendingScreen extends StatefulWidget {
     required this.logoAsset,
     required this.recipientAccount,
     required this.recipientName,
+    required this.markAsFavorite,
   });
 
   final double amount;
@@ -4171,6 +4469,7 @@ class SendingScreen extends StatefulWidget {
   final String logoAsset;
   final String recipientAccount;
   final String recipientName;
+  final bool markAsFavorite;
 
   @override
   State<SendingScreen> createState() => _SendingScreenState();
@@ -4193,6 +4492,7 @@ class _SendingScreenState extends State<SendingScreen> {
               logoAsset: widget.logoAsset,
               recipientAccount: widget.recipientAccount,
               recipientName: widget.recipientName,
+              markAsFavorite: widget.markAsFavorite,
             ),
           ),
         );
@@ -4327,6 +4627,7 @@ class TransferSuccessScreen extends StatefulWidget {
     required this.logoAsset,
     required this.recipientAccount,
     required this.recipientName,
+    required this.markAsFavorite,
   });
 
   final double amount;
@@ -4334,6 +4635,7 @@ class TransferSuccessScreen extends StatefulWidget {
   final String logoAsset;
   final String recipientAccount;
   final String recipientName;
+  final bool markAsFavorite;
 
   @override
   State<TransferSuccessScreen> createState() => _TransferSuccessScreenState();
@@ -4372,6 +4674,23 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
   Future<void> _persistTransaction() async {
     if (_transactionSaved) return;
     _transactionSaved = true;
+
+    if (widget.markAsFavorite) {
+      try {
+        await FavoriteRecipientsStore.upsert(
+          FavoriteRecipient(
+            recipientName: widget.recipientName,
+            accountNumber: widget.recipientAccount,
+            bankName: widget.bankName,
+            logoAsset: widget.logoAsset,
+            savedAtMs: DateTime.now().millisecondsSinceEpoch,
+          ),
+        );
+      } catch (_) {
+        // Favorites are best-effort and should not block transfer success.
+      }
+    }
+
     if (Firebase.apps.isEmpty) return;
     try {
       await FirebaseFirestore.instance.collection('transactions').add({
