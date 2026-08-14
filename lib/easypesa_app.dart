@@ -2952,6 +2952,29 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  void _appendPinDigit(String digit) {
+    if (_isLoading) return;
+    final current = _pinController.text;
+    if (current.length >= 6) return;
+    setState(() {
+      _pinController.text = '$current$digit';
+    });
+  }
+
+  void _removePinDigit() {
+    if (_isLoading) return;
+    final current = _pinController.text;
+    if (current.isEmpty) return;
+    setState(() {
+      _pinController.text = current.substring(0, current.length - 1);
+    });
+  }
+
+  Future<void> _submitPinFromPad() async {
+    if (_isLoading || _pinController.text.length != 6) return;
+    await _submitPin();
+  }
+
   Widget _pinBox(int index) {
     final filled = _pinController.text.length > index;
     return Container(
@@ -2966,6 +2989,221 @@ class _AuthScreenState extends State<AuthScreen> {
       child: Text(
         filled ? '•' : '',
         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _pinPadCell({
+    required Widget child,
+    required VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Center(child: child),
+    );
+  }
+
+  Widget _buildBottomPinPad() {
+    final doneEnabled = !_isLoading && _pinController.text.length == 6;
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 232,
+          child: Table(
+            border: const TableBorder(
+              top: BorderSide(color: Color(0xFFE3E5E8), width: 1),
+              horizontalInside: BorderSide(color: Color(0xFFE3E5E8), width: 1),
+              verticalInside: BorderSide(color: Color(0xFFE3E5E8), width: 1),
+            ),
+            children: [
+              TableRow(
+                children: [
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '1',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('1'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '2',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('2'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '3',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('3'),
+                    ),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '4',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('4'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '5',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('5'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '6',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('6'),
+                    ),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '7',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('7'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '8',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('8'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '9',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('9'),
+                    ),
+                  ),
+                ],
+              ),
+              TableRow(
+                children: [
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Icon(
+                        Icons.backspace_outlined,
+                        color: AppColors.textPrimary,
+                        size: 24,
+                      ),
+                      onTap: _removePinDigit,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: const Text(
+                        '0',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      onTap: () => _appendPinDigit('0'),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 58,
+                    child: _pinPadCell(
+                      child: Text(
+                        'Done',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: doneEnabled
+                              ? AppColors.textPrimary
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                      onTap: doneEnabled ? _submitPinFromPad : null,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -3008,224 +3246,222 @@ class _AuthScreenState extends State<AuthScreen> {
     final showEmail = !_pinMode;
     return Material(
       color: Colors.transparent,
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 18),
-          constraints: const BoxConstraints(maxWidth: 420),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x22000000),
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        children: [
+          Align(
+            alignment: _pinMode ? Alignment.bottomCenter : Alignment.center,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, _pinMode ? 300 : 0),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 18),
+                constraints: const BoxConstraints(maxWidth: 420),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x22000000),
+                      blurRadius: 24,
+                      offset: Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: Stack(
                   children: [
-                    const SizedBox(height: 10),
-                    Image.asset(
-                      AppAssets.authLockLogo,
-                      height: 156,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.lock_rounded,
-                          size: 136,
-                          color: AppColors.brandGreen,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _pinMode ? 'ENTER YOUR 6 DIGIT PIN' : 'SIGN IN TO YOUR ACCOUNT',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    if (showEmail) ...[
-                      const SizedBox(height: 10),
-                      Text(
-                        rememberedEmail.isEmpty
-                            ? 'Last email will appear here'
-                            : rememberedEmail,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    if (_pinMode) ...[
-                      TextField(
-                        controller: _pinController,
-                        autofocus: true,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        textAlign: TextAlign.center,
-                        maxLength: 6,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          counterText: '',
-                          border: InputBorder.none,
-                        ),
-                        style: const TextStyle(color: Colors.transparent),
-                        cursorColor: Colors.transparent,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(6, _pinBox),
-                      ),
-                    ] else ...[
-                      Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) => (value == null || !value.contains('@') || !value.contains('.'))
-                                  ? 'Enter a valid email'
-                                  : null,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 10),
+                          Image.asset(
+                            AppAssets.authLockLogo,
+                            height: 156,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.lock_rounded,
+                                size: 136,
+                                color: AppColors.brandGreen,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _pinMode ? 'ENTER YOUR 6 DIGIT PIN' : 'SIGN IN TO YOUR ACCOUNT',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                              letterSpacing: 0.3,
                             ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: '6 digit password',
-                                border: const OutlineInputBorder(),
-                                suffixIcon: IconButton(
-                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                  ),
-                                ),
+                          ),
+                          if (showEmail) ...[
+                            const SizedBox(height: 10),
+                            Text(
+                              rememberedEmail.isEmpty
+                                  ? 'Last email will appear here'
+                                  : rememberedEmail,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
-                              validator: (value) {
-                                final text = value?.trim() ?? '';
-                                if (text.length != 6 || int.tryParse(text) == null) {
-                                  return 'Enter a 6 digit password';
-                                }
-                                return null;
-                              },
                             ),
                           ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: FilledButton(
-                          onPressed: _isLoading
-                              ? null
-                              : _pinMode
-                                  ? (_pinController.text.length == 6
-                                      ? _submitPin
-                                      : null)
-                                  : _submitCredentials,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _pinMode
-                                ? (_pinController.text.length == 6
-                                    ? AppColors.brandGreen
-                                    : const Color(0xFFB9B9BF))
-                                : AppColors.brandGreen,
-                            disabledBackgroundColor: const Color(0xFFB9B9BF),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(22),
+                          const SizedBox(height: 16),
+                          if (_pinMode) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(6, _pinBox),
                             ),
-                          ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('PROCEED'),
-                        ),
-                      ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _editEmail,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textPrimary,
-                              side: const BorderSide(color: Color(0xFF8BC9A7)),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
+                          ] else ...[
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _emailController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Email',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    validator: (value) => (value == null || !value.contains('@') || !value.contains('.'))
+                                        ? 'Enter a valid email'
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _passwordController,
+                                    obscureText: _obscurePassword,
+                                    keyboardType: TextInputType.number,
+                                    decoration: InputDecoration(
+                                      labelText: '6 digit password',
+                                      border: const OutlineInputBorder(),
+                                      suffixIcon: IconButton(
+                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        icon: Icon(
+                                          _obscurePassword
+                                              ? Icons.visibility_outlined
+                                              : Icons.visibility_off_outlined,
+                                        ),
+                                      ),
+                                    ),
+                                    validator: (value) {
+                                      final text = value?.trim() ?? '';
+                                      if (text.length != 6 || int.tryParse(text) == null) {
+                                        return 'Enter a 6 digit password';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
                               ),
-                              minimumSize: const Size.fromHeight(44),
                             ),
-                            child: const Text('FORGOT PIN'),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: _editEmail,
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              foregroundColor: AppColors.brandGreen,
-                              side: const BorderSide(color: Color(0xFF8BC9A7)),
-                              shape: const CircleBorder(),
+                          ],
+                          const SizedBox(height: 18),
+                          if (!_pinMode)
+                            SizedBox(
+                              width: double.infinity,
+                              height: 44,
+                              child: FilledButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : _pinMode
+                                        ? (_pinController.text.length == 6
+                                            ? _submitPinFromPad
+                                            : null)
+                                        : _submitCredentials,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: _pinMode
+                                      ? (_pinController.text.length == 6
+                                          ? AppColors.brandGreen
+                                          : const Color(0xFFB9B9BF))
+                                      : AppColors.brandGreen,
+                                  disabledBackgroundColor: const Color(0xFFB9B9BF),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                ),
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        height: 18,
+                                        width: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('PROCEED'),
+                              ),
                             ),
-                            child: const Icon(Icons.fingerprint_rounded),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _editEmail,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.textPrimary,
+                                    side: const BorderSide(color: Color(0xFF8BC9A7)),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(22),
+                                    ),
+                                    minimumSize: const Size.fromHeight(44),
+                                  ),
+                                  child: const Text('FORGOT PIN'),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 48,
+                                height: 48,
+                                child: OutlinedButton(
+                                  onPressed: _editEmail,
+                                  style: OutlinedButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    foregroundColor: AppColors.brandGreen,
+                                    side: const BorderSide(color: Color(0xFF8BC9A7)),
+                                    shape: const CircleBorder(),
+                                  ),
+                                  child: const Icon(Icons.fingerprint_rounded),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    if (!_pinMode) ...[
-                      const SizedBox(height: 10),
-                      TextButton(
-                        onPressed: _editEmail,
-                        child: const Text('Use account email'),
+                          if (!_pinMode) ...[
+                            const SizedBox(height: 10),
+                            TextButton(
+                              onPressed: _editEmail,
+                              child: const Text('Use account email'),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: IconButton(
+                        onPressed: widget.onRequestClose,
+                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: IconButton(
-                  onPressed: widget.onRequestClose,
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          if (_pinMode)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: _buildBottomPinPad(),
+            ),
+        ],
       ),
     );
   }
