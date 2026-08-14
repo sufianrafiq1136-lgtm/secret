@@ -217,6 +217,17 @@ class FavoriteRecipientsStore {
     ];
     final serialized = jsonEncode(next.take(20).map((item) => item.toJson()).toList());
     await prefs.setString(_prefsKey, serialized);
+
+    final favoritesCollection = _accountCollection('favorites');
+    if (favoritesCollection == null) return;
+    await favoritesCollection.doc(recipient.id).set({
+      'recipientName': recipient.recipientName,
+      'accountNumber': recipient.accountNumber,
+      'bankName': recipient.bankName,
+      'logoAsset': recipient.logoAsset,
+      'savedAtMs': recipient.savedAtMs,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   static Future<bool> contains({
@@ -231,6 +242,58 @@ class FavoriteRecipientsStore {
           item.accountNumber == accountNumber,
     );
   }
+
+  static Future<void> syncFromFirestore() async {
+    final favoritesCollection = _accountCollection('favorites');
+    if (favoritesCollection == null) return;
+    final snapshot = await favoritesCollection.get();
+    if (snapshot.docs.isEmpty) return;
+    final favorites = snapshot.docs
+        .map(
+          (doc) => FavoriteRecipient(
+            recipientName: (doc.data()['recipientName'] as String?) ?? '',
+            accountNumber: (doc.data()['accountNumber'] as String?) ?? '',
+            bankName: (doc.data()['bankName'] as String?) ?? '',
+            logoAsset: (doc.data()['logoAsset'] as String?) ?? '',
+            savedAtMs: (doc.data()['savedAtMs'] as num?)?.toInt() ??
+                DateTime.now().millisecondsSinceEpoch,
+          ),
+        )
+        .where(
+          (item) =>
+              item.recipientName.trim().isNotEmpty &&
+              item.accountNumber.trim().isNotEmpty &&
+              item.bankName.trim().isNotEmpty,
+        )
+        .toList()
+      ..sort((a, b) => b.savedAtMs.compareTo(a.savedAtMs));
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _prefsKey,
+      jsonEncode(favorites.take(20).map((item) => item.toJson()).toList()),
+    );
+  }
+}
+
+String _accountFirestoreKey(String email) {
+  return base64Url.encode(utf8.encode(email.trim().toLowerCase()));
+}
+
+String? _activeAccountEmail() {
+  final currentUser = FirebaseAuth.instance.currentUser;
+  final email = currentUser?.email?.trim();
+  if (email != null && email.isNotEmpty) return email;
+  return null;
+}
+
+CollectionReference<Map<String, dynamic>>? _accountCollection(String name) {
+  final email = _activeAccountEmail();
+  if (email == null) return null;
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(_accountFirestoreKey(email))
+      .collection(name);
 }
 
 class TransactionRecord {
@@ -2546,13 +2609,16 @@ class _BankTransferScreenState extends State<BankTransferScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() => setState(() {}));
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     if (widget.initialSearchQuery != null &&
         widget.initialSearchQuery!.trim().isNotEmpty) {
       _searchController.text = widget.initialSearchQuery!.trim();
     }
     _searchController.addListener(() => setState(() {}));
     _loadFavorites();
+    FavoriteRecipientsStore.syncFromFirestore();
   }
 
   @override
@@ -2575,6 +2641,12 @@ class _BankTransferScreenState extends State<BankTransferScreen>
     if (!mounted) return;
     setState(() {
       _favoriteRecipients = favorites;
+    });
+    await FavoriteRecipientsStore.syncFromFirestore();
+    final refreshed = await FavoriteRecipientsStore.load();
+    if (!mounted) return;
+    setState(() {
+      _favoriteRecipients = refreshed;
     });
   }
 
@@ -2628,7 +2700,7 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                   favorite.recipientName,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text('${favorite.bankName} • ${favorite.accountNumber}'),
+                subtitle: Text('${favorite.bankName} * ${favorite.accountNumber}'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
@@ -2987,7 +3059,7 @@ class _AuthScreenState extends State<AuthScreen> {
         border: Border.all(color: const Color(0xFFBFBFC5), width: 1.2),
       ),
       child: Text(
-        filled ? '•' : '',
+        filled ? '*' : '',
         style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
       ),
     );
@@ -4928,7 +5000,9 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
 
     if (Firebase.apps.isEmpty) return;
     try {
-      await FirebaseFirestore.instance.collection('transactions').add({
+      final transactionsCollection = _accountCollection('transactions');
+      if (transactionsCollection == null) return;
+      await transactionsCollection.add({
         'title': 'Money Transfer via Raast - ${widget.recipientName}',
         'amount': widget.amount,
         'recipientName': widget.recipientName,
@@ -4941,6 +5015,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
         'timestamp': FieldValue.serverTimestamp(),
         'clientTimestamp': Timestamp.fromDate(DateTime.now()),
         'receiptId': 'ID#515320532390',
+        'savedForEmail': _activeAccountEmail(),
       });
     } catch (_) {
       if (!mounted) return;
@@ -5760,10 +5835,15 @@ class _LiveTransactionHistoryTab extends StatelessWidget {
     }
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: FirebaseFirestore.instance
-          .collection('transactions')
-          .orderBy('clientTimestamp', descending: true)
-          .snapshots(),
+      stream: (() {
+        final transactionsCollection = _accountCollection('transactions');
+        if (transactionsCollection == null) {
+          return const Stream<QuerySnapshot<Map<String, dynamic>>>.empty();
+        }
+        return transactionsCollection
+            .orderBy('clientTimestamp', descending: true)
+            .snapshots();
+      })(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
