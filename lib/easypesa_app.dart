@@ -3363,42 +3363,41 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                           ],
                           const SizedBox(height: 18),
-                          if (!_pinMode)
-                            SizedBox(
-                              width: double.infinity,
-                              height: 44,
-                              child: FilledButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : _pinMode
-                                        ? (_pinController.text.length == 6
-                                            ? _submitPinFromPad
-                                            : null)
-                                        : _submitCredentials,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: _pinMode
+                          SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: FilledButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : _pinMode
                                       ? (_pinController.text.length == 6
-                                          ? AppColors.brandGreen
-                                          : const Color(0xFFB9B9BF))
-                                      : AppColors.brandGreen,
-                                  disabledBackgroundColor: const Color(0xFFB9B9BF),
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                  ),
+                                          ? _submitPinFromPad
+                                          : null)
+                                      : _submitCredentials,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _pinMode
+                                    ? (_pinController.text.length == 6
+                                        ? AppColors.brandGreen
+                                        : const Color(0xFFB9B9BF))
+                                    : AppColors.brandGreen,
+                                disabledBackgroundColor: const Color(0xFFB9B9BF),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(22),
                                 ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 18,
-                                        width: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text('PROCEED'),
                               ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text('PROCEED'),
                             ),
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             children: [
