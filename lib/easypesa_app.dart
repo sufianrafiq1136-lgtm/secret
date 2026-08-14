@@ -6,11 +6,13 @@ import 'dart:ui' as ui;
 import 'package:cross_file/cross_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gal/gal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 class AppColors {
@@ -72,6 +74,8 @@ class AppAssets {
   static const mTag = 'assets/icons/M-Tag.png';
   static const rsOneGame = 'assets/icons/Rs .1 Game.png';
   static const loadingIcon = 'assets/icons/loadeing icon.jpg';
+  static const authLockLogo =
+      'assets/logos/authentication logo.jpg';
   static const abhiMicrofinanceBank =
       'assets/logos/abhli micro finance bank.png';
   static const alBarakaIslamicBank = 'assets/logos/Al Baraka islami Bank.jpg';
@@ -288,8 +292,135 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+enum _AuthPromptMode { credentials, pin }
+
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _pageIndex = 0;
+  bool _isUnlocked = false;
+  bool _loadingAuthState = true;
+  bool _authDialogOpen = false;
+  _AuthPromptMode _authPromptMode = _AuthPromptMode.credentials;
+  String? _rememberedEmail;
+  Timer? _lockTimer;
+  DateTime? _lastUnlockAt;
+
+  static const _storedEmailKey = 'remembered_auth_email';
+  static const _lastUnlockKey = 'last_unlock_at_ms';
+  static const _lockAfter = Duration(minutes: 15);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _restoreAuthState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _lockTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _relockIfExpired();
+    }
+  }
+
+  Future<void> _restoreAuthState() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString(_storedEmailKey)?.trim();
+    final lastUnlockMs = prefs.getInt(_lastUnlockKey);
+    if (!mounted) return;
+
+    setState(() {
+      _rememberedEmail = (email == null || email.isEmpty) ? null : email;
+      _lastUnlockAt =
+          lastUnlockMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lastUnlockMs);
+      _authPromptMode = _rememberedEmail == null
+          ? _AuthPromptMode.credentials
+          : _AuthPromptMode.pin;
+      _isUnlocked = false;
+      _loadingAuthState = false;
+    });
+
+    _showAuthIfNeeded();
+  }
+
+  void _scheduleAutoLock() {
+    _lockTimer?.cancel();
+    _lockTimer = Timer(_lockAfter, () {
+      if (!mounted) return;
+      _lock();
+    });
+  }
+
+  Future<void> _saveUnlockTimestamp() async {
+    _lastUnlockAt = DateTime.now();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastUnlockKey, _lastUnlockAt!.millisecondsSinceEpoch);
+  }
+
+  Future<void> _saveRememberedEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storedEmailKey, email);
+    if (!mounted) return;
+    setState(() => _rememberedEmail = email);
+  }
+
+  void _unlock() {
+    if (!mounted) return;
+    setState(() => _isUnlocked = true);
+    _scheduleAutoLock();
+    _saveUnlockTimestamp();
+  }
+
+  void _lock() {
+    if (!mounted) return;
+    setState(() {
+      _isUnlocked = false;
+      _authPromptMode = _AuthPromptMode.pin;
+    });
+    _showAuthIfNeeded();
+  }
+
+  void _relockIfExpired() {
+    final lastUnlock = _lastUnlockAt;
+    if (_isUnlocked &&
+        lastUnlock != null &&
+        DateTime.now().difference(lastUnlock) >= _lockAfter) {
+      _lock();
+    }
+  }
+
+  void _showAuthIfNeeded() {
+    if (_authDialogOpen || _isUnlocked || _loadingAuthState) return;
+    _authDialogOpen = true;
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 240),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: AuthScreen(
+              mode: _authPromptMode,
+              rememberedEmail: _rememberedEmail,
+              onRememberEmail: _saveRememberedEmail,
+              onUnlockSuccess: _unlock,
+              onRequestClose: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      _authDialogOpen = false;
+    });
+  }
 
   void _setNavIndex(int navIndex) {
     if (navIndex == 2) {
@@ -324,6 +455,7 @@ class _AppShellState extends State<AppShell> {
                 Navigator.of(dialogContext).pop();
                 setState(() => _pageIndex = 3);
               },
+              onLogout: _lock,
             ),
           ),
         );
@@ -421,12 +553,21 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final hasFirebaseApp = Firebase.apps.isNotEmpty;
+    final currentUser = hasFirebaseApp ? FirebaseAuth.instance.currentUser : null;
     final pages = <Widget>[
       HomeScreen(
+        isSignedIn: _isUnlocked && currentUser != null,
+        displayName: currentUser?.displayName?.trim().isNotEmpty == true
+            ? currentUser!.displayName!.trim()
+            : 'MUHAMMAD SUFIYAN RAFEEQ',
+        maskedAccountText: '*******1267',
+        onSignIn: _openAuthScreen,
         onSendMoney: () => showSendMoneySheet(context),
         onOpenPlaceholder: _openPlaceholder,
         onOpenMyAccount: () => setState(() => _pageIndex = 3),
         onOpenProfileDrawer: _openProfileDrawer,
+        onLogout: _lock,
       ),
       const CashPointsScreen(),
       const PromotionsScreen(),
@@ -434,7 +575,20 @@ class _AppShellState extends State<AppShell> {
     ];
 
     return Scaffold(
-      body: IndexedStack(index: _pageIndex, children: pages),
+      body: Stack(
+        children: [
+          IndexedStack(index: _pageIndex, children: pages),
+          if (_loadingAuthState)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x11000000),
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.brandGreen),
+                ),
+              ),
+            ),
+        ],
+      ),
       bottomNavigationBar: EasyPesaBottomNav(
         selectedIndex: _pageIndex,
         onTap: _setNavIndex,
@@ -448,6 +602,13 @@ class _AppShellState extends State<AppShell> {
         MaterialPageRoute<void>(builder: (_) => ComingSoonScreen(title: title)),
       );
     });
+  }
+
+  Future<void> _openAuthScreen() async {
+    if (_authDialogOpen) return;
+    _authPromptMode =
+        _rememberedEmail == null ? _AuthPromptMode.credentials : _AuthPromptMode.pin;
+    _showAuthIfNeeded();
   }
 }
 
@@ -807,16 +968,26 @@ class _NavItem extends StatelessWidget {
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
+    required this.isSignedIn,
+    required this.displayName,
+    required this.maskedAccountText,
+    required this.onSignIn,
     required this.onSendMoney,
     required this.onOpenPlaceholder,
     required this.onOpenMyAccount,
     required this.onOpenProfileDrawer,
+    required this.onLogout,
   });
 
+  final bool isSignedIn;
+  final String displayName;
+  final String maskedAccountText;
+  final VoidCallback onSignIn;
   final VoidCallback onSendMoney;
   final ValueChanged<String> onOpenPlaceholder;
   final VoidCallback onOpenMyAccount;
   final VoidCallback onOpenProfileDrawer;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -833,10 +1004,13 @@ class HomeScreen extends StatelessWidget {
           padding: EdgeInsets.only(bottom: 112.ui),
           children: [
             _HomeHeaderCluster(
+              isSignedIn: isSignedIn,
+              displayName: displayName,
+              maskedAccountText: maskedAccountText,
               onSearch: () => onOpenPlaceholder('Search'),
               onNotifications: () => onOpenPlaceholder('Notifications'),
-              onLogout: () => onOpenPlaceholder('Logout'),
-              onSignIn: onSendMoney,
+              onLogout: onLogout,
+              onSignIn: onSignIn,
               onProfileTap: onOpenProfileDrawer,
             ),
             SizedBox(height: 18.ui),
@@ -1041,6 +1215,9 @@ class HomeScreen extends StatelessWidget {
 
 class _HomeHeaderCluster extends StatelessWidget {
   const _HomeHeaderCluster({
+    required this.isSignedIn,
+    required this.displayName,
+    required this.maskedAccountText,
     required this.onSearch,
     required this.onNotifications,
     required this.onLogout,
@@ -1048,6 +1225,9 @@ class _HomeHeaderCluster extends StatelessWidget {
     required this.onProfileTap,
   });
 
+  final bool isSignedIn;
+  final String displayName;
+  final String maskedAccountText;
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
   final VoidCallback onLogout;
@@ -1090,7 +1270,13 @@ class _HomeHeaderCluster extends StatelessWidget {
             left: 14.ui,
             right: 14.ui,
             top: cardTop,
-            child: _AccountCard(onSignIn: onSignIn, scale: cardBoost),
+            child: _AccountCard(
+              isSignedIn: isSignedIn,
+              displayName: displayName,
+              maskedAccountText: maskedAccountText,
+              onSignIn: onSignIn,
+              scale: cardBoost,
+            ),
           ),
         ],
       ),
@@ -1117,6 +1303,7 @@ class _HomeHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = this.scale;
     return Container(
       height: height,
       decoration: const BoxDecoration(
@@ -1306,10 +1493,12 @@ class _ProfileDrawer extends StatelessWidget {
   const _ProfileDrawer({
     required this.onMyAccount,
     required this.onTransactionHistory,
+    required this.onLogout,
   });
 
   final VoidCallback onMyAccount;
   final VoidCallback onTransactionHistory;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -1417,7 +1606,7 @@ class _ProfileDrawer extends StatelessWidget {
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () {},
+                    onPressed: onLogout,
                     icon: const Icon(
                       Icons.logout_rounded,
                       color: AppColors.danger,
@@ -1478,14 +1667,34 @@ class _DrawerAction extends StatelessWidget {
   }
 }
 
-class _AccountCard extends StatelessWidget {
-  const _AccountCard({required this.onSignIn, required this.scale});
+class _AccountCard extends StatefulWidget {
+  const _AccountCard({
+    required this.isSignedIn,
+    required this.displayName,
+    required this.maskedAccountText,
+    required this.onSignIn,
+    required this.scale,
+  });
 
+  final bool isSignedIn;
+  final String displayName;
+  final String maskedAccountText;
   final VoidCallback onSignIn;
   final double scale;
 
   @override
+  State<_AccountCard> createState() => _AccountCardState();
+}
+
+class _AccountCardState extends State<_AccountCard> {
+  bool _balanceVisible = true;
+
+  void _toggleBalance() => setState(() => _balanceVisible = !_balanceVisible);
+
+  @override
   Widget build(BuildContext context) {
+    final scale = widget.scale;
+    final isSignedIn = widget.isSignedIn;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.tealCard,
@@ -1498,41 +1707,29 @@ class _AccountCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(
-        16.ui * scale,
-        14.ui * scale,
-        16.ui * scale,
-        16.ui * scale,
-      ),
+      padding: EdgeInsets.fromLTRB(16.ui * scale, 14.ui * scale, 16.ui * scale, 16.ui * scale),
       child: Column(
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 9.ui * scale,
-                  vertical: 6.ui * scale,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 9.ui * scale, vertical: 6.ui * scale),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(6.ui * scale),
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: Colors.white,
-                      size: 16.ui * scale * HomeScale.factor,
-                    ),
-                    SizedBox(width: 6.ui * scale),
+                    Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 16),
+                    SizedBox(width: 6),
                     Text(
                       'easypaisa Account',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
-                        fontSize: 12 * scale,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -1561,7 +1758,7 @@ class _AccountCard extends StatelessWidget {
                     child: Icon(
                       Icons.star_rounded,
                       color: Color(0xFFFFE082),
-                      size: 18.ui * scale,
+                      size: 18,
                     ),
                   ),
                 ],
@@ -1577,7 +1774,7 @@ class _AccountCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Available Balance',
+                      isSignedIn ? 'Available Balance' : widget.displayName,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13 * scale,
@@ -1588,24 +1785,36 @@ class _AccountCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Rs. 24,590',
+                          isSignedIn
+                              ? (_balanceVisible ? 'Rs. 24,590' : 'Rs. ******')
+                              : widget.maskedAccountText,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 27 * scale,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        SizedBox(width: 8.ui * scale),
-                        Icon(
-                          Icons.visibility_off_outlined,
-                          color: Colors.white,
-                          size: 23.ui * scale,
-                        ),
+                        if (isSignedIn) ...[
+                          SizedBox(width: 8.ui * scale),
+                          GestureDetector(
+                            onTap: _toggleBalance,
+                            behavior: HitTestBehavior.opaque,
+                            child: Icon(
+                              _balanceVisible
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              color: Colors.white,
+                              size: 23.ui * scale,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                     SizedBox(height: 3.ui * scale),
                     Text(
-                      'Tap to hide balance',
+                      isSignedIn
+                          ? (_balanceVisible ? 'Tap to hide balance' : 'Tap to see balance')
+                          : 'Sign in to your easypaisa account',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12 * scale,
@@ -1620,13 +1829,10 @@ class _AccountCard extends StatelessWidget {
                   SizedBox(
                     width: 110.ui * scale,
                     child: OutlinedButton(
-                      onPressed: onSignIn,
+                      onPressed: widget.onSignIn,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
-                        side: BorderSide(
-                          color: AppColors.brandGreen,
-                          width: 1.5.ui * scale,
-                        ),
+                        side: BorderSide(color: AppColors.brandGreen, width: 1.5.ui * scale),
                         minimumSize: Size.fromHeight(30.ui * scale),
                         padding: EdgeInsets.zero,
                         shape: RoundedRectangleBorder(
@@ -1634,7 +1840,7 @@ class _AccountCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Upgrade Account',
+                        isSignedIn ? 'Upgrade Account' : 'Sign In',
                         style: TextStyle(
                           fontSize: 10.5 * scale,
                           fontWeight: FontWeight.w600,
@@ -1646,7 +1852,7 @@ class _AccountCard extends StatelessWidget {
                   SizedBox(
                     width: 110.ui * scale,
                     child: FilledButton(
-                      onPressed: onSignIn,
+                      onPressed: widget.onSignIn,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brandGreen,
                         foregroundColor: Colors.white,
@@ -1657,7 +1863,7 @@ class _AccountCard extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Add Cash',
+                        isSignedIn ? 'Add Cash' : 'Sign In',
                         style: TextStyle(
                           fontSize: 12 * scale,
                           fontWeight: FontWeight.w600,
@@ -2371,6 +2577,384 @@ class _BankTransferScreenState extends State<BankTransferScreen>
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class AuthScreen extends StatefulWidget {
+  const AuthScreen({
+    super.key,
+    required this.mode,
+    required this.rememberedEmail,
+    required this.onRememberEmail,
+    required this.onUnlockSuccess,
+    required this.onRequestClose,
+  });
+
+  final _AuthPromptMode mode;
+  final String? rememberedEmail;
+  final Future<void> Function(String email) onRememberEmail;
+  final VoidCallback onUnlockSuccess;
+  final VoidCallback onRequestClose;
+
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _pinController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  bool get _pinMode => widget.mode == _AuthPromptMode.pin;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.rememberedEmail != null) {
+      _emailController.text = widget.rememberedEmail!;
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitCredentials() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    try {
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code != 'user-not-found') rethrow;
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      }
+      await widget.onRememberEmail(email);
+      widget.onUnlockSuccess();
+      if (mounted) Navigator.of(context).pop();
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Authentication failed')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitPin() async {
+    final pin = _pinController.text.trim();
+    final email = widget.rememberedEmail;
+    if (email == null || pin.length != 6) return;
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: pin,
+      );
+      widget.onUnlockSuccess();
+      if (mounted) Navigator.of(context).pop();
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Authentication failed')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _pinBox(int index) {
+    final filled = _pinController.text.length > index;
+    return Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFBFBFC5), width: 1.2),
+      ),
+      child: Text(
+        filled ? '•' : '',
+        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Future<void> _editEmail() async {
+    final emailController = TextEditingController(text: widget.rememberedEmail ?? _emailController.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Enter email'),
+          content: TextField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(hintText: 'Email address'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(emailController.text.trim()),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted) return;
+    if (result == null || result.isEmpty) return;
+    _emailController.text = result;
+    await widget.onRememberEmail(result);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rememberedEmail = widget.rememberedEmail ?? _emailController.text.trim();
+    final showEmail = !_pinMode;
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 18),
+          constraints: const BoxConstraints(maxWidth: 420),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 24,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 10),
+                    Image.asset(
+                      AppAssets.authLockLogo,
+                      height: 156,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.lock_rounded,
+                          size: 136,
+                          color: AppColors.brandGreen,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _pinMode ? 'ENTER YOUR 6 DIGIT PIN' : 'SIGN IN TO YOUR ACCOUNT',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    if (showEmail) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        rememberedEmail.isEmpty
+                            ? 'Last email will appear here'
+                            : rememberedEmail,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    if (_pinMode) ...[
+                      TextField(
+                        controller: _pinController,
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        textAlign: TextAlign.center,
+                        maxLength: 6,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          counterText: '',
+                          border: InputBorder.none,
+                        ),
+                        style: const TextStyle(color: Colors.transparent),
+                        cursorColor: Colors.transparent,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(6, _pinBox),
+                      ),
+                    ] else ...[
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) => (value == null || !value.contains('@') || !value.contains('.'))
+                                  ? 'Enter a valid email'
+                                  : null,
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: '6 digit password',
+                                border: const OutlineInputBorder(),
+                                suffixIcon: IconButton(
+                                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                              ),
+                              validator: (value) {
+                                final text = value?.trim() ?? '';
+                                if (text.length != 6 || int.tryParse(text) == null) {
+                                  return 'Enter a 6 digit password';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: FilledButton(
+                          onPressed: _isLoading
+                              ? null
+                              : _pinMode
+                                  ? (_pinController.text.length == 6
+                                      ? _submitPin
+                                      : null)
+                                  : _submitCredentials,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _pinMode
+                                ? (_pinController.text.length == 6
+                                    ? AppColors.brandGreen
+                                    : const Color(0xFFB9B9BF))
+                                : AppColors.brandGreen,
+                            disabledBackgroundColor: const Color(0xFFB9B9BF),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text('PROCEED'),
+                        ),
+                      ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: _editEmail,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textPrimary,
+                              side: const BorderSide(color: Color(0xFF8BC9A7)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(22),
+                              ),
+                              minimumSize: const Size.fromHeight(44),
+                            ),
+                            child: const Text('FORGOT PIN'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: _editEmail,
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              foregroundColor: AppColors.brandGreen,
+                              side: const BorderSide(color: Color(0xFF8BC9A7)),
+                              shape: const CircleBorder(),
+                            ),
+                            child: const Icon(Icons.fingerprint_rounded),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!_pinMode) ...[
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: _editEmail,
+                        child: const Text('Use account email'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Positioned(
+                top: 6,
+                right: 6,
+                child: IconButton(
+                  onPressed: widget.onRequestClose,
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
