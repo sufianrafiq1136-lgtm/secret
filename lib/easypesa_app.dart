@@ -218,7 +218,7 @@ class FavoriteRecipientsStore {
     final serialized = jsonEncode(next.take(20).map((item) => item.toJson()).toList());
     await prefs.setString(_prefsKey, serialized);
 
-    final favoritesCollection = _accountCollection('favorites');
+    final favoritesCollection = await _accountCollection('favorites');
     if (favoritesCollection == null) return;
     await favoritesCollection.doc(recipient.id).set({
       'recipientName': recipient.recipientName,
@@ -244,7 +244,7 @@ class FavoriteRecipientsStore {
   }
 
   static Future<void> syncFromFirestore() async {
-    final favoritesCollection = _accountCollection('favorites');
+    final favoritesCollection = await _accountCollection('favorites');
     if (favoritesCollection == null) return;
     final snapshot = await favoritesCollection.get();
     if (snapshot.docs.isEmpty) return;
@@ -276,23 +276,31 @@ class FavoriteRecipientsStore {
   }
 }
 
-String _accountFirestoreKey(String email) {
-  return base64Url.encode(utf8.encode(email.trim().toLowerCase()));
+String _accountIdKeyForEmail(String email) {
+  return 'account_id_for_${base64Url.encode(utf8.encode(email.trim().toLowerCase()))}';
 }
 
-String? _activeAccountEmail() {
+Future<String?> _activeAccountId() async {
   final currentUser = FirebaseAuth.instance.currentUser;
   final email = currentUser?.email?.trim();
-  if (email != null && email.isNotEmpty) return email;
-  return null;
+  if (email == null || email.isEmpty) return null;
+
+  final prefs = await SharedPreferences.getInstance();
+  final key = _accountIdKeyForEmail(email);
+  final existing = prefs.getString(key)?.trim();
+  if (existing != null && existing.isNotEmpty) return existing;
+
+  final newAccountId = FirebaseFirestore.instance.collection('_ids').doc().id;
+  await prefs.setString(key, newAccountId);
+  return newAccountId;
 }
 
-CollectionReference<Map<String, dynamic>>? _accountCollection(String name) {
-  final email = _activeAccountEmail();
-  if (email == null) return null;
+Future<CollectionReference<Map<String, dynamic>>?> _accountCollection(String name) async {
+  final accountId = await _activeAccountId();
+  if (accountId == null) return null;
   return FirebaseFirestore.instance
       .collection('users')
-      .doc(_accountFirestoreKey(email))
+      .doc(accountId)
       .collection(name);
 }
 
@@ -5000,7 +5008,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
 
     if (Firebase.apps.isEmpty) return;
     try {
-      final transactionsCollection = _accountCollection('transactions');
+      final transactionsCollection = await _accountCollection('transactions');
       if (transactionsCollection == null) return;
       await transactionsCollection.add({
         'title': 'Money Transfer via Raast - ${widget.recipientName}',
@@ -5015,7 +5023,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
         'timestamp': FieldValue.serverTimestamp(),
         'clientTimestamp': Timestamp.fromDate(DateTime.now()),
         'receiptId': 'ID#515320532390',
-        'savedForEmail': _activeAccountEmail(),
+        'savedForEmail': FirebaseAuth.instance.currentUser?.email,
       });
     } catch (_) {
       if (!mounted) return;
@@ -5834,92 +5842,115 @@ class _LiveTransactionHistoryTab extends StatelessWidget {
       );
     }
 
-    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: (() {
-        final transactionsCollection = _accountCollection('transactions');
-        if (transactionsCollection == null) {
-          return const Stream<QuerySnapshot<Map<String, dynamic>>>.empty();
-        }
-        return transactionsCollection
-            .orderBy('clientTimestamp', descending: true)
-            .snapshots();
-      })(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    return FutureBuilder<String?>(
+      future: _activeAccountId(),
+      builder: (context, accountSnapshot) {
+        if (accountSnapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.brandGreen),
           );
         }
 
-        if (snapshot.hasError) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'Unable to load transaction history.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-              ),
-            ),
-          );
-        }
-
-        final records = (snapshot.data?.docs ?? const [])
-            .map(TransactionRecord.fromFirestore)
-            .toList();
-
-        if (records.isEmpty) {
+        final accountId = accountSnapshot.data;
+        if (accountId == null) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
             children: const [
               _EStatementCard(),
               SizedBox(height: 20),
-              _EmptyHistoryState(),
+              _EmptyHistoryState(
+                title: 'Sign in to view history',
+                subtitle: 'Each account has its own Firestore history after sign-in.',
+              ),
             ],
           );
         }
 
-        final grouped = <String, List<TransactionRecord>>{};
-        for (final record in records) {
-          grouped
-              .putIfAbsent(record.dateLabel, () => <TransactionRecord>[])
-              .add(record);
-        }
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(accountId)
+              .collection('transactions')
+              .orderBy('clientTimestamp', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.brandGreen),
+              );
+            }
 
-        final latest = records.first;
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-          children: [
-            const _EStatementCard(),
-            const SizedBox(height: 16),
-            _SyncRow(
-              dateLabel: latest.dateLabel,
-              lastSyncLabel:
-                  '${latest.timestamp.day.toString().padLeft(2, '0')}-${_shortMonth(latest.timestamp.month)}-${latest.timestamp.year}',
-            ),
-            const SizedBox(height: 14),
-            ...grouped.entries.expand(
-              (entry) => [
-                Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 10),
+            if (snapshot.hasError) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
                   child: Text(
-                    entry.key,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+                    'Unable to load transaction history.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                   ),
                 ),
-                ...entry.value.map(
-                  (record) => Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: TransactionCard(record: record),
-                  ),
+              );
+            }
+
+            final records = (snapshot.data?.docs ?? const [])
+                .map(TransactionRecord.fromFirestore)
+                .toList();
+
+            if (records.isEmpty) {
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+                children: const [
+                  _EStatementCard(),
+                  SizedBox(height: 20),
+                  _EmptyHistoryState(),
+                ],
+              );
+            }
+
+            final grouped = <String, List<TransactionRecord>>{};
+            for (final record in records) {
+              grouped
+                  .putIfAbsent(record.dateLabel, () => <TransactionRecord>[])
+                  .add(record);
+            }
+
+            final latest = records.first;
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+              children: [
+                const _EStatementCard(),
+                const SizedBox(height: 16),
+                _SyncRow(
+                  dateLabel: latest.dateLabel,
+                  lastSyncLabel:
+                      '${latest.timestamp.day.toString().padLeft(2, '0')}-${_shortMonth(latest.timestamp.month)}-${latest.timestamp.year}',
+                ),
+                const SizedBox(height: 14),
+                ...grouped.entries.expand(
+                  (entry) => [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 10),
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    ...entry.value.map(
+                      (record) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: TransactionCard(record: record),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+            );
+          },
         );
       },
     );
