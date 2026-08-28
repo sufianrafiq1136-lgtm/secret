@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 String initialsFor(String input) {
@@ -86,6 +88,48 @@ String normalizePhoneNumber(String input) {
   final trimmed = input.trim();
   if (trimmed.isEmpty) return '';
   return trimmed.replaceAll(RegExp(r'\s+'), '');
+}
+
+const String kAdminEmail = 'sufianrafiq1136@gmail.com';
+
+bool isAdminEmail(String? email) {
+  final normalized = email?.trim().toLowerCase();
+  return normalized != null && normalized == kAdminEmail.toLowerCase();
+}
+
+String _deviceIdPrefsKey() => 'device_session_id';
+
+String _randomDeviceId() {
+  final now = DateTime.now().microsecondsSinceEpoch;
+  final random = Random().nextInt(1 << 32);
+  return base64Url.encode(utf8.encode('${now}_$random'));
+}
+
+Future<String> _getOrCreateDeviceId() async {
+  final prefs = await SharedPreferences.getInstance();
+  final existing = prefs.getString(_deviceIdPrefsKey())?.trim();
+  if (existing != null && existing.isNotEmpty) return existing;
+  final created = _randomDeviceId();
+  await prefs.setString(_deviceIdPrefsKey(), created);
+  return created;
+}
+
+String _platformLabel() {
+  if (kIsWeb) return 'web';
+  switch (defaultTargetPlatform) {
+    case TargetPlatform.android:
+      return 'android';
+    case TargetPlatform.iOS:
+      return 'ios';
+    case TargetPlatform.macOS:
+      return 'macos';
+    case TargetPlatform.windows:
+      return 'windows';
+    case TargetPlatform.linux:
+      return 'linux';
+    case TargetPlatform.fuchsia:
+      return 'fuchsia';
+  }
 }
 
 String accountIdKeyForEmail(String email) {
@@ -192,4 +236,62 @@ Future<void> saveUserProfile({
   if (currentUser != null && displayName.trim().isNotEmpty) {
     await currentUser.updateDisplayName(displayName.trim());
   }
+}
+
+Future<void> recordDeviceSession({
+  required User? user,
+  required String? accountId,
+}) async {
+  if (user == null) return;
+  final email = user.email?.trim();
+  if (email == null || email.isEmpty) return;
+
+  final deviceId = await _getOrCreateDeviceId();
+  final sessionDoc = FirebaseFirestore.instance.collection('device_sessions').doc(deviceId);
+  await sessionDoc.set({
+    'deviceId': deviceId,
+    'deviceLabel': '${_platformLabel()} device',
+    'platform': _platformLabel(),
+    'email': email.toLowerCase(),
+    'displayName': user.displayName?.trim() ?? '',
+    'accountId': accountId ?? '',
+    'isAdmin': isAdminEmail(email),
+    'isActive': true,
+    'lastSeenAt': FieldValue.serverTimestamp(),
+    'loggedInAt': FieldValue.serverTimestamp(),
+    'logoutRequested': false,
+    'logoutRequestedAt': null,
+  }, SetOptions(merge: true));
+}
+
+Future<void> clearDeviceSession({required User? user}) async {
+  if (user == null) return;
+  final email = user.email?.trim();
+  if (email == null || email.isEmpty) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  final deviceId = prefs.getString(_deviceIdPrefsKey())?.trim();
+  if (deviceId == null || deviceId.isEmpty) return;
+
+  await FirebaseFirestore.instance.collection('device_sessions').doc(deviceId).set({
+    'email': email.toLowerCase(),
+    'isActive': false,
+    'loggedOutAt': FieldValue.serverTimestamp(),
+    'lastSeenAt': FieldValue.serverTimestamp(),
+    'logoutRequested': false,
+    'logoutRequestedAt': null,
+  }, SetOptions(merge: true));
+}
+
+Future<void> requestDeviceLogout({
+  required String deviceId,
+  required String email,
+}) async {
+  await FirebaseFirestore.instance.collection('device_sessions').doc(deviceId).set({
+    'email': email.toLowerCase().trim().toLowerCase(),
+    'isActive': false,
+    'logoutRequested': true,
+    'logoutRequestedAt': FieldValue.serverTimestamp(),
+    'lastSeenAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
 }

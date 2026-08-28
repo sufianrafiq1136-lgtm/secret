@@ -440,7 +440,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   _AuthPromptMode _authPromptMode = _AuthPromptMode.credentials;
   String? _rememberedEmail;
   Timer? _lockTimer;
+  Timer? _deviceSessionTimer;
   DateTime? _lastUnlockAt;
+  bool _isAdmin = false;
 
   static const _storedEmailKey = 'remembered_auth_email';
   static const _lastUnlockKey = 'last_unlock_at_ms';
@@ -457,6 +459,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _lockTimer?.cancel();
+    _deviceSessionTimer?.cancel();
     super.dispose();
   }
 
@@ -495,6 +498,34 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     });
   }
 
+  void _startDeviceSessionWatch() {
+    _deviceSessionTimer?.cancel();
+    _deviceSessionTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _checkForRemoteLogout();
+    });
+  }
+
+  Future<void> _checkForRemoteLogout() async {
+    if (!_isUnlocked) return;
+    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    if (currentUser == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final deviceId = prefs.getString('device_session_id')?.trim();
+    if (deviceId == null || deviceId.isEmpty) return;
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('device_sessions')
+        .doc(deviceId)
+        .get();
+    final data = snapshot.data();
+    final shouldForceLogout =
+        data == null || data['logoutRequested'] == true || data['isActive'] == false;
+    if (!shouldForceLogout) return;
+    if (!mounted) return;
+    await FirebaseAuth.instance.signOut();
+    _lock();
+  }
+
   Future<void> _saveUnlockTimestamp() async {
     _lastUnlockAt = DateTime.now();
     final prefs = await SharedPreferences.getInstance();
@@ -510,15 +541,33 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _unlock() {
     if (!mounted) return;
-    setState(() => _isUnlocked = true);
+    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final accountIdFuture = Firebase.apps.isNotEmpty ? activeAccountId() : Future<String?>.value(null);
+    accountIdFuture.then((accountId) {
+      if (!mounted) return;
+      setState(() {
+        _isUnlocked = true;
+        _isAdmin = isAdminEmail(currentUser?.email);
+      });
+      if (currentUser != null) {
+        recordDeviceSession(user: currentUser, accountId: accountId);
+      }
+    });
     _scheduleAutoLock();
+    _startDeviceSessionWatch();
     _saveUnlockTimestamp();
   }
 
   void _lock() {
+    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    if (currentUser != null) {
+      clearDeviceSession(user: currentUser);
+    }
+    _deviceSessionTimer?.cancel();
     if (!mounted) return;
     setState(() {
       _isUnlocked = false;
+      _isAdmin = false;
       _authPromptMode = _AuthPromptMode.pin;
     });
     _showAuthIfNeeded();
@@ -573,7 +622,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openProfileDrawer() async {
     if (!mounted) return;
-    final profile = await resolveUserProfile();
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -585,21 +633,32 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           alignment: Alignment.centerLeft,
           child: Material(
             color: Colors.transparent,
-            child: _ProfileDrawer(
-              profile: profile,
-              onMyAccount: () {
-                Navigator.of(dialogContext).pop();
-                setState(() => _pageIndex = 3);
+            child: FutureBuilder<UserProfileData>(
+              future: resolveUserProfile(),
+              builder: (context, snapshot) {
+                final profile = snapshot.data;
+                return _ProfileDrawer(
+                  profile: profile,
+                  isLoadingProfile: snapshot.connectionState == ConnectionState.waiting,
+                  onMyAccount: () {
+                    Navigator.of(dialogContext).pop();
+                    setState(() => _pageIndex = 3);
+                  },
+                  onTransactionHistory: () {
+                    Navigator.of(dialogContext).pop();
+                    setState(() => _pageIndex = 3);
+                  },
+                  onEditProfile: () async {
+                    Navigator.of(dialogContext).pop();
+                    await _openProfileEditor();
+                  },
+                  onAdminPanel: () {
+                    Navigator.of(dialogContext).pop();
+                    _openAdminPanel();
+                  },
+                  onLogout: _lock,
+                );
               },
-              onTransactionHistory: () {
-                Navigator.of(dialogContext).pop();
-                setState(() => _pageIndex = 3);
-              },
-              onEditProfile: () async {
-                Navigator.of(dialogContext).pop();
-                await _openProfileEditor();
-              },
-              onLogout: _lock,
             ),
           ),
         );
@@ -746,6 +805,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             final pages = <Widget>[
               HomeScreen(
                 isSignedIn: _isUnlocked && currentUser != null,
+                isAdmin: _isAdmin,
                 profile: profile,
                 maskedAccountText: '*******1267',
                 onSignIn: _openAuthScreen,
@@ -753,6 +813,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 onOpenPlaceholder: _openPlaceholder,
                 onOpenMyAccount: () => setState(() => _pageIndex = 3),
                 onOpenProfileDrawer: _openProfileDrawer,
+                onOpenAdminPanel: _openAdminPanel,
                 onLogout: _lock,
               ),
               const CashPointsScreen(),
@@ -803,6 +864,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _authPromptMode =
         _rememberedEmail == null ? _AuthPromptMode.credentials : _AuthPromptMode.pin;
     _showAuthIfNeeded();
+  }
+
+  void _openAdminPanel() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const AdminPanelScreen()),
+    );
   }
 
   void _openSendMoneyFlow() {
@@ -1174,6 +1241,7 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.isSignedIn,
+    required this.isAdmin,
     required this.profile,
     required this.maskedAccountText,
     required this.onSignIn,
@@ -1181,10 +1249,12 @@ class HomeScreen extends StatelessWidget {
     required this.onOpenPlaceholder,
     required this.onOpenMyAccount,
     required this.onOpenProfileDrawer,
+    required this.onOpenAdminPanel,
     required this.onLogout,
   });
 
   final bool isSignedIn;
+  final bool isAdmin;
   final UserProfileData profile;
   final String maskedAccountText;
   final VoidCallback onSignIn;
@@ -1192,6 +1262,7 @@ class HomeScreen extends StatelessWidget {
   final ValueChanged<String> onOpenPlaceholder;
   final VoidCallback onOpenMyAccount;
   final VoidCallback onOpenProfileDrawer;
+  final VoidCallback onOpenAdminPanel;
   final VoidCallback onLogout;
 
   @override
@@ -1210,6 +1281,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             _HomeHeaderCluster(
               isSignedIn: isSignedIn,
+              isAdmin: isAdmin,
               profile: profile,
               maskedAccountText: maskedAccountText,
               onSearch: () => onOpenPlaceholder('Search'),
@@ -1217,6 +1289,7 @@ class HomeScreen extends StatelessWidget {
               onLogout: onLogout,
               onSignIn: onSignIn,
               onProfileTap: onOpenProfileDrawer,
+              onAdminTap: onOpenAdminPanel,
             ),
             SizedBox(height: 18.ui),
             Padding(
@@ -1421,6 +1494,7 @@ class HomeScreen extends StatelessWidget {
 class _HomeHeaderCluster extends StatelessWidget {
   const _HomeHeaderCluster({
     required this.isSignedIn,
+    required this.isAdmin,
     required this.profile,
     required this.maskedAccountText,
     required this.onSearch,
@@ -1428,9 +1502,11 @@ class _HomeHeaderCluster extends StatelessWidget {
     required this.onLogout,
     required this.onSignIn,
     required this.onProfileTap,
+    required this.onAdminTap,
   });
 
   final bool isSignedIn;
+  final bool isAdmin;
   final UserProfileData profile;
   final String maskedAccountText;
   final VoidCallback onSearch;
@@ -1438,6 +1514,7 @@ class _HomeHeaderCluster extends StatelessWidget {
   final VoidCallback onLogout;
   final VoidCallback onSignIn;
   final VoidCallback onProfileTap;
+  final VoidCallback onAdminTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1463,6 +1540,7 @@ class _HomeHeaderCluster extends StatelessWidget {
                 onNotifications: onNotifications,
                 onLogout: onLogout,
                 onProfileTap: onProfileTap,
+                onAdminTap: onAdminTap,
               ),
               Container(
                 height: lowerPanelHeight,
@@ -1497,6 +1575,7 @@ class _HomeHero extends StatelessWidget {
     required this.onNotifications,
     required this.onLogout,
     required this.onProfileTap,
+    required this.onAdminTap,
   });
 
   final double height;
@@ -1505,6 +1584,7 @@ class _HomeHero extends StatelessWidget {
   final VoidCallback onNotifications;
   final VoidCallback onLogout;
   final VoidCallback onProfileTap;
+  final VoidCallback onAdminTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1607,13 +1687,28 @@ class _HomeHero extends StatelessWidget {
           Positioned(
             top: 20.ui,
             right: 8.ui,
-            child: IconButton(
-              onPressed: onLogout,
-              icon: Icon(
-                Icons.logout_rounded,
-                color: AppColors.danger,
-                size: 27.3.ui * scale * HomeScale.factor,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (FirebaseAuth.instance.currentUser?.email != null &&
+                    isAdminEmail(FirebaseAuth.instance.currentUser?.email))
+                  IconButton(
+                    onPressed: onAdminTap,
+                    icon: Icon(
+                      Icons.admin_panel_settings_outlined,
+                      color: AppColors.textPrimary,
+                      size: 27.3.ui * scale * HomeScale.factor,
+                    ),
+                  ),
+                IconButton(
+                  onPressed: onLogout,
+                  icon: Icon(
+                    Icons.logout_rounded,
+                    color: AppColors.danger,
+                    size: 27.3.ui * scale * HomeScale.factor,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1697,16 +1792,20 @@ class _DigitalBankFallback extends StatelessWidget {
 class _ProfileDrawer extends StatelessWidget {
   const _ProfileDrawer({
     required this.profile,
+    required this.isLoadingProfile,
     required this.onMyAccount,
     required this.onTransactionHistory,
     required this.onEditProfile,
+    required this.onAdminPanel,
     required this.onLogout,
   });
 
-  final UserProfileData profile;
+  final UserProfileData? profile;
+  final bool isLoadingProfile;
   final VoidCallback onMyAccount;
   final VoidCallback onTransactionHistory;
   final VoidCallback onEditProfile;
+  final VoidCallback onAdminPanel;
   final VoidCallback onLogout;
 
   @override
@@ -1759,13 +1858,22 @@ class _ProfileDrawer extends StatelessWidget {
                       radius: 28,
                       backgroundImage: AssetImage(AppAssets.profileAvatar),
                       backgroundColor: Color(0xFFD9EDE3),
-                      child: Text(
-                        profile.initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      child: isLoadingProfile || profile == null
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              profile!.initials,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -1773,7 +1881,7 @@ class _ProfileDrawer extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            profile.displayName,
+                            profile?.displayName ?? 'Loading...',
                             style: const TextStyle(
                               fontSize: 18,
                               height: 1.1,
@@ -1806,6 +1914,12 @@ class _ProfileDrawer extends StatelessWidget {
               label: 'Transaction History',
               onTap: onTransactionHistory,
             ),
+            if (profile != null && isAdminEmail(profile!.email))
+              _DrawerAction(
+                icon: Icons.admin_panel_settings_outlined,
+                label: 'Admin Panel',
+                onTap: onAdminPanel,
+              ),
             _DrawerAction(
               icon: Icons.settings_outlined,
               label: 'Settings',
@@ -6854,6 +6968,206 @@ class PlaceholderScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class DeviceSessionData {
+  const DeviceSessionData({
+    required this.deviceId,
+    required this.deviceLabel,
+    required this.platform,
+    required this.email,
+    required this.displayName,
+    required this.accountId,
+    required this.isAdmin,
+    required this.isActive,
+    required this.logoutRequested,
+    required this.lastSeenAt,
+  });
+
+  final String deviceId;
+  final String deviceLabel;
+  final String platform;
+  final String email;
+  final String displayName;
+  final String accountId;
+  final bool isAdmin;
+  final bool isActive;
+  final bool logoutRequested;
+  final DateTime? lastSeenAt;
+
+  factory DeviceSessionData.fromFirestore(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+    return DeviceSessionData(
+      deviceId: (data['deviceId'] as String?)?.trim().isNotEmpty == true
+          ? (data['deviceId'] as String).trim()
+          : doc.id,
+      deviceLabel: (data['deviceLabel'] as String?)?.trim().isNotEmpty == true
+          ? (data['deviceLabel'] as String).trim()
+          : 'Device',
+      platform: (data['platform'] as String?)?.trim() ?? 'unknown',
+      email: (data['email'] as String?)?.trim() ?? '',
+      displayName: (data['displayName'] as String?)?.trim() ?? '',
+      accountId: (data['accountId'] as String?)?.trim() ?? '',
+      isAdmin: data['isAdmin'] == true,
+      isActive: data['isActive'] != false,
+      logoutRequested: data['logoutRequested'] == true,
+      lastSeenAt: (data['lastSeenAt'] as Timestamp?)?.toDate(),
+    );
+  }
+}
+
+class AdminPanelScreen extends StatelessWidget {
+  const AdminPanelScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (!isAdminEmail(currentUser?.email)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Admin Panel')),
+        body: const Center(
+          child: Text(
+            'You do not have admin access.',
+            style: TextStyle(fontSize: 18),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F5),
+      appBar: AppBar(
+        title: const Text('Admin Panel'),
+        backgroundColor: Colors.white,
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('device_sessions')
+            .orderBy('lastSeenAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.brandGreen),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'Unable to load device sessions.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
+          final sessions = (snapshot.data?.docs ?? const [])
+              .map(DeviceSessionData.fromFirestore)
+              .toList();
+
+          if (sessions.isEmpty) {
+            return const Center(
+              child: Text(
+                'No device sessions yet.',
+                style: TextStyle(fontSize: 18),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: sessions.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final session = sessions[index];
+              final lastSeen = session.lastSeenAt == null
+                  ? 'Unknown'
+                  : '${session.lastSeenAt!.year}-${session.lastSeenAt!.month.toString().padLeft(2, '0')}-${session.lastSeenAt!.day.toString().padLeft(2, '0')}';
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            session.deviceLabel,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Chip(
+                          label: Text(session.isActive ? 'Active' : 'Signed out'),
+                          backgroundColor: session.isActive
+                              ? const Color(0xFFE3F8EC)
+                              : const Color(0xFFF2F2F4),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Email: ${session.email}'),
+                    Text('Account ID: ${session.accountId.isEmpty ? "-" : session.accountId}'),
+                    Text('Platform: ${session.platform}'),
+                    Text('Last seen: $lastSeen'),
+                    if (session.logoutRequested)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 6),
+                        child: Text(
+                          'Logout requested',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
+                    if (session.isAdmin) ...[
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Admin device',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.brandGreenDark,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        onPressed: session.isActive && !session.logoutRequested
+                            ? () async {
+                                await requestDeviceLogout(
+                                  deviceId: session.deviceId,
+                                  email: session.email,
+                                );
+                              }
+                            : null,
+                        icon: const Icon(Icons.logout_rounded, size: 18),
+                        label: const Text('Log out device'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
