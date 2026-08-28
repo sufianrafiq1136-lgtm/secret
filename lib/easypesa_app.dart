@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:cross_file/cross_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gal/gal.dart';
@@ -102,6 +103,53 @@ class AppAssets {
   static const sadapay = 'assets/logos/sadapay.webp';
   static const nayapay = 'assets/logos/nayapay.jpg';
   static const raastId = 'assets/logos/raast id.png';
+}
+
+class ProfileAvatar extends StatelessWidget {
+  const ProfileAvatar({
+    super.key,
+    required this.profile,
+    required this.size,
+    this.fallbackBackgroundColor = const Color(0xFFD9EDE3),
+    this.fallbackIconColor = Colors.white,
+  });
+
+  final UserProfileData? profile;
+  final double size;
+  final Color fallbackBackgroundColor;
+  final Color fallbackIconColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final photoBytes = profile?.photoBytes;
+    final fallbackLetter = _singleLetterFor(profile?.displayName ?? '');
+    return ClipOval(
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: photoBytes != null
+            ? Image.memory(photoBytes, fit: BoxFit.cover)
+            : Container(
+                color: fallbackBackgroundColor,
+                alignment: Alignment.center,
+                child: Text(
+                  fallbackLetter,
+                  style: TextStyle(
+                    color: fallbackIconColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: size * 0.38,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
+String _singleLetterFor(String input) {
+  final trimmed = input.trim();
+  if (trimmed.isEmpty) return 'U';
+  return trimmed.substring(0, 1).toUpperCase();
 }
 
 String formatRs(double value) => value.toStringAsFixed(2);
@@ -622,6 +670,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openProfileDrawer() async {
     if (!mounted) return;
+    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    if (!_isUnlocked || currentUser == null) {
+      _openAuthScreen();
+      return;
+    }
     await showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -763,11 +816,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       builder: (dialogContext) {
         return _EditProfileDialog(
           profile: profile,
-          onSave: (displayName, phoneNumber) async {
+          onSave: (displayName, phoneNumber, photoBase64) async {
             await saveUserProfile(
               profile: profile,
               displayName: displayName,
               phoneNumber: phoneNumber,
+              photoBase64: photoBase64,
             );
           },
         );
@@ -780,72 +834,54 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final currentUser =
         Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
 
-    return FutureBuilder<String?>(
-      future: Firebase.apps.isNotEmpty ? activeAccountId() : Future<String?>.value(null),
-      builder: (context, accountSnapshot) {
-        final accountId = accountSnapshot.data;
-        final profileStream = (Firebase.apps.isNotEmpty && accountId != null)
-            ? FirebaseFirestore.instance
-                .collection('users')
-                .doc(accountId)
-                .collection('profile')
-                .doc('userProfile')
-                .snapshots()
-            : null;
+    return FutureBuilder<UserProfileData>(
+      future: resolveUserProfile(),
+      builder: (context, snapshot) {
+        final accountId = currentUser == null ? null : snapshot.data?.accountId;
+        final profile = snapshot.data ?? UserProfileData.fallback(currentUser, accountId);
 
-        return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: profileStream,
-          builder: (context, snapshot) {
-            final profile = UserProfileData.fromFirestore(
-              snapshot.data?.data(),
-              currentUser,
-              accountId,
-            );
+        final pages = <Widget>[
+          HomeScreen(
+            isSignedIn: _isUnlocked && currentUser != null,
+            isAdmin: _isAdmin,
+            profile: profile,
+            maskedAccountText: '*******1267',
+            onSignIn: _openAuthScreen,
+            onSendMoney: _openSendMoneyFlow,
+            onOpenPlaceholder: _openPlaceholder,
+            onOpenMyAccount: () => setState(() => _pageIndex = 3),
+            onOpenProfileDrawer: _openProfileDrawer,
+            onOpenAdminPanel: _openAdminPanel,
+            onLogout: _lock,
+          ),
+          const CashPointsScreen(),
+          const PromotionsScreen(),
+          MyAccountScreen(
+            profile: profile,
+            onBackToHome: () => setState(() => _pageIndex = 0),
+            onEditProfile: _openProfileEditor,
+          ),
+        ];
 
-            final pages = <Widget>[
-              HomeScreen(
-                isSignedIn: _isUnlocked && currentUser != null,
-                isAdmin: _isAdmin,
-                profile: profile,
-                maskedAccountText: '*******1267',
-                onSignIn: _openAuthScreen,
-                onSendMoney: _openSendMoneyFlow,
-                onOpenPlaceholder: _openPlaceholder,
-                onOpenMyAccount: () => setState(() => _pageIndex = 3),
-                onOpenProfileDrawer: _openProfileDrawer,
-                onOpenAdminPanel: _openAdminPanel,
-                onLogout: _lock,
-              ),
-              const CashPointsScreen(),
-              const PromotionsScreen(),
-              MyAccountScreen(
-                profile: profile,
-                onBackToHome: () => setState(() => _pageIndex = 0),
-                onEditProfile: _openProfileEditor,
-              ),
-            ];
-
-            return Scaffold(
-              body: Stack(
-                children: [
-                  IndexedStack(index: _pageIndex, children: pages),
-                  if (_loadingAuthState)
-                    const Positioned.fill(
-                      child: ColoredBox(
-                        color: Color(0x11000000),
-                        child: Center(
-                          child: CircularProgressIndicator(color: AppColors.brandGreen),
-                        ),
-                      ),
+        return Scaffold(
+          body: Stack(
+            children: [
+              IndexedStack(index: _pageIndex, children: pages),
+              if (_loadingAuthState)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Color(0x11000000),
+                    child: Center(
+                      child: CircularProgressIndicator(color: AppColors.brandGreen),
                     ),
-                ],
-              ),
-              bottomNavigationBar: EasyPesaBottomNav(
-                selectedIndex: _pageIndex,
-                onTap: _setNavIndex,
-              ),
-            );
-          },
+                  ),
+                ),
+            ],
+          ),
+          bottomNavigationBar: EasyPesaBottomNav(
+            selectedIndex: _pageIndex,
+            onTap: _setNavIndex,
+          ),
         );
       },
     );
@@ -1536,6 +1572,7 @@ class _HomeHeaderCluster extends StatelessWidget {
               _HomeHero(
                 height: headerHeight,
                 scale: heroBoost,
+                profile: profile,
                 onSearch: onSearch,
                 onNotifications: onNotifications,
                 onLogout: onLogout,
@@ -1558,6 +1595,7 @@ class _HomeHeaderCluster extends StatelessWidget {
               displayName: profile.displayName,
               maskedAccountText: maskedAccountText,
               onSignIn: onSignIn,
+              onTapProfile: onProfileTap,
               scale: cardBoost,
             ),
           ),
@@ -1571,6 +1609,7 @@ class _HomeHero extends StatelessWidget {
   const _HomeHero({
     required this.height,
     required this.scale,
+    required this.profile,
     required this.onSearch,
     required this.onNotifications,
     required this.onLogout,
@@ -1580,6 +1619,7 @@ class _HomeHero extends StatelessWidget {
 
   final double height;
   final double scale;
+  final UserProfileData profile;
   final VoidCallback onSearch;
   final VoidCallback onNotifications;
   final VoidCallback onLogout;
@@ -1620,24 +1660,11 @@ class _HomeHero extends StatelessWidget {
                   ],
                 ),
                 child: ClipOval(
-                  child: Image.asset(
-                    AppAssets.profileAvatar,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF5B5C69), Color(0xFFB3B7B9)],
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 28.ui * scale * HomeScale.factor,
-                        ),
-                      );
-                    },
+                  child: ProfileAvatar(
+                    profile: profile,
+                    size: 42.ui * scale * HomeScale.factor,
+                    fallbackBackgroundColor: const Color(0xFF5B5C69),
+                    fallbackIconColor: Colors.white,
                   ),
                 ),
               ),
@@ -1687,28 +1714,13 @@ class _HomeHero extends StatelessWidget {
           Positioned(
             top: 20.ui,
             right: 8.ui,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (FirebaseAuth.instance.currentUser?.email != null &&
-                    isAdminEmail(FirebaseAuth.instance.currentUser?.email))
-                  IconButton(
-                    onPressed: onAdminTap,
-                    icon: Icon(
-                      Icons.admin_panel_settings_outlined,
-                      color: AppColors.textPrimary,
-                      size: 27.3.ui * scale * HomeScale.factor,
-                    ),
-                  ),
-                IconButton(
-                  onPressed: onLogout,
-                  icon: Icon(
-                    Icons.logout_rounded,
-                    color: AppColors.danger,
-                    size: 27.3.ui * scale * HomeScale.factor,
-                  ),
-                ),
-              ],
+            child: IconButton(
+              onPressed: onLogout,
+              icon: Icon(
+                Icons.logout_rounded,
+                color: AppColors.danger,
+                size: 27.3.ui * scale * HomeScale.factor,
+              ),
             ),
           ),
         ],
@@ -1854,26 +1866,25 @@ class _ProfileDrawer extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundImage: AssetImage(AppAssets.profileAvatar),
-                      backgroundColor: Color(0xFFD9EDE3),
-                      child: isLoadingProfile || profile == null
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(
-                              profile!.initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ProfileAvatar(
+                          profile: profile,
+                          size: 56,
+                          fallbackBackgroundColor: const Color(0xFFD9EDE3),
+                          fallbackIconColor: Colors.white,
+                        ),
+                        if (isLoadingProfile || profile == null)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
+                          ),
+                      ],
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -2003,6 +2014,7 @@ class _AccountCard extends StatefulWidget {
     required this.displayName,
     required this.maskedAccountText,
     required this.onSignIn,
+    required this.onTapProfile,
     required this.scale,
   });
 
@@ -2010,6 +2022,7 @@ class _AccountCard extends StatefulWidget {
   final String displayName;
   final String maskedAccountText;
   final VoidCallback onSignIn;
+  final VoidCallback onTapProfile;
   final double scale;
 
   @override
@@ -2025,187 +2038,194 @@ class _AccountCardState extends State<_AccountCard> {
   Widget build(BuildContext context) {
     final scale = widget.scale;
     final isSignedIn = widget.isSignedIn;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.tealCard,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isSignedIn ? widget.onTapProfile : widget.onSignIn,
         borderRadius: BorderRadius.circular(18.ui * scale),
-        boxShadow: const [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 14,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.fromLTRB(16.ui * scale, 14.ui * scale, 16.ui * scale, 16.ui * scale),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 9.ui * scale, vertical: 6.ui * scale),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6.ui * scale),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'easypaisa Account',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'My Rewards',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15 * scale,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(width: 8.ui * scale),
-                  Container(
-                    width: 28.ui * scale,
-                    height: 28.ui * scale,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFFC107),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.star_rounded,
-                      color: Color(0xFFFFE082),
-                      size: 18,
-                    ),
-                  ),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.tealCard,
+            borderRadius: BorderRadius.circular(18.ui * scale),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 14,
+                offset: Offset(0, 6),
               ),
             ],
           ),
-          SizedBox(height: 18.ui * scale),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          padding: EdgeInsets.fromLTRB(16.ui * scale, 14.ui * scale, 16.ui * scale, 16.ui * scale),
+          child: Column(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isSignedIn ? 'Available Balance' : widget.displayName,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13 * scale,
-                        fontWeight: FontWeight.w600,
-                      ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 9.ui * scale, vertical: 6.ui * scale),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(6.ui * scale),
                     ),
-                    SizedBox(height: 5.ui * scale),
-                    Row(
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 16),
+                        SizedBox(width: 6),
                         Text(
-                          isSignedIn
-                              ? (_balanceVisible ? 'Rs. 24,590' : 'Rs. ******')
-                              : widget.maskedAccountText,
+                          'easypaisa Account',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 27 * scale,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'My Rewards',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15 * scale,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(width: 8.ui * scale),
+                      Container(
+                        width: 28.ui * scale,
+                        height: 28.ui * scale,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFFC107),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.star_rounded,
+                          color: Color(0xFFFFE082),
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 18.ui * scale),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isSignedIn ? 'Available Balance' : widget.displayName,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13 * scale,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (isSignedIn) ...[
-                          SizedBox(width: 8.ui * scale),
-                          GestureDetector(
-                            onTap: _toggleBalance,
-                            behavior: HitTestBehavior.opaque,
-                            child: Icon(
-                              _balanceVisible
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: Colors.white,
-                              size: 23.ui * scale,
+                        SizedBox(height: 5.ui * scale),
+                        Row(
+                          children: [
+                            Text(
+                              isSignedIn
+                                  ? (_balanceVisible ? 'Rs. 24,590' : 'Rs. ******')
+                                  : widget.maskedAccountText,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 27 * scale,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
+                            if (isSignedIn) ...[
+                              SizedBox(width: 8.ui * scale),
+                              GestureDetector(
+                                onTap: _toggleBalance,
+                                behavior: HitTestBehavior.opaque,
+                                child: Icon(
+                                  _balanceVisible
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: Colors.white,
+                                  size: 23.ui * scale,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: 3.ui * scale),
+                        Text(
+                          isSignedIn
+                              ? (_balanceVisible ? 'Tap to hide balance' : 'Tap to see balance')
+                              : 'Sign in to your easypaisa account',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12 * scale,
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                    SizedBox(height: 3.ui * scale),
-                    Text(
-                      isSignedIn
-                          ? (_balanceVisible ? 'Tap to hide balance' : 'Tap to see balance')
-                          : 'Sign in to your easypaisa account',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12 * scale,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 8.ui * scale),
-              Column(
-                children: [
-                  SizedBox(
-                    width: 110.ui * scale,
-                    child: OutlinedButton(
-                      onPressed: widget.onSignIn,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: BorderSide(color: AppColors.brandGreen, width: 1.5.ui * scale),
-                        minimumSize: Size.fromHeight(30.ui * scale),
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.ui * scale),
-                        ),
-                      ),
-                      child: Text(
-                        isSignedIn ? 'Upgrade Account' : 'Sign In',
-                        style: TextStyle(
-                          fontSize: 10.5 * scale,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
                   ),
-                  SizedBox(height: 10.ui * scale),
-                  SizedBox(
-                    width: 110.ui * scale,
-                    child: FilledButton(
-                      onPressed: widget.onSignIn,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.brandGreen,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size.fromHeight(30.ui * scale),
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.ui * scale),
+                  SizedBox(width: 8.ui * scale),
+                  Column(
+                    children: [
+                      SizedBox(
+                        width: 110.ui * scale,
+                        child: OutlinedButton(
+                          onPressed: widget.onSignIn,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(color: AppColors.brandGreen, width: 1.5.ui * scale),
+                            minimumSize: Size.fromHeight(30.ui * scale),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.ui * scale),
+                            ),
+                          ),
+                          child: Text(
+                            isSignedIn ? 'Upgrade Account' : 'Sign In',
+                            style: TextStyle(
+                              fontSize: 10.5 * scale,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Text(
-                        isSignedIn ? 'Add Cash' : 'Sign In',
-                        style: TextStyle(
-                          fontSize: 12 * scale,
-                          fontWeight: FontWeight.w600,
+                      SizedBox(height: 10.ui * scale),
+                      SizedBox(
+                        width: 110.ui * scale,
+                        child: FilledButton(
+                          onPressed: widget.onSignIn,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.brandGreen,
+                            foregroundColor: Colors.white,
+                            minimumSize: Size.fromHeight(30.ui * scale),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.ui * scale),
+                            ),
+                          ),
+                          child: Text(
+                            isSignedIn ? 'Add Cash' : 'Sign In',
+                            style: TextStyle(
+                              fontSize: 12 * scale,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -6006,7 +6026,11 @@ class _EditProfileDialog extends StatefulWidget {
   });
 
   final UserProfileData profile;
-  final Future<void> Function(String displayName, String phoneNumber) onSave;
+  final Future<void> Function(
+    String displayName,
+    String phoneNumber,
+    String? photoBase64,
+  ) onSave;
 
   @override
   State<_EditProfileDialog> createState() => _EditProfileDialogState();
@@ -6014,8 +6038,10 @@ class _EditProfileDialog extends StatefulWidget {
 
 class _EditProfileDialogState extends State<_EditProfileDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _imagePicker = ImagePicker();
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
+  String? _photoBase64;
   bool _saving = false;
 
   @override
@@ -6025,6 +6051,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     _phoneController = TextEditingController(
       text: widget.profile.phoneNumber == 'Not set' ? '' : widget.profile.phoneNumber,
     );
+    _photoBase64 = widget.profile.photoBase64;
   }
 
   @override
@@ -6053,7 +6080,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await widget.onSave(_nameController.text, _phoneController.text);
+      await widget.onSave(_nameController.text, _phoneController.text, _photoBase64);
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -6067,6 +6094,21 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     } finally {
       if (mounted) setState(() => _saving = false);
     }
+  }
+
+  Future<void> _pickPhoto() async {
+    if (_saving) return;
+    final picked = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _photoBase64 = base64Encode(bytes);
+    });
   }
 
   @override
@@ -6084,17 +6126,87 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
             children: [
               Row(
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'Edit Profile',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                  GestureDetector(
+                    onTap: _saving ? null : _pickPhoto,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          width: 74,
+                          height: 74,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFFDCEFE3), width: 2),
+                          ),
+                          child: ClipOval(
+                            child: _photoBase64 == null
+                                ? Image.asset(
+                                    AppAssets.profileAvatar,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      color: const Color(0xFFF4FBF7),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        initialsFor(_nameController.text.isEmpty
+                                            ? widget.profile.displayName
+                                            : _nameController.text),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Image.memory(
+                                    base64Decode(_photoBase64!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      color: const Color(0xFFF4FBF7),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        initialsFor(_nameController.text.isEmpty
+                                            ? widget.profile.displayName
+                                            : _nameController.text),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: const BoxDecoration(
+                            color: AppColors.brandGreen,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.edit,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Text(
+                      'Tap the photo to upload a profile picture',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Edit Profile',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -6562,17 +6674,11 @@ class _SummaryProfileCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ClipOval(
-            child: Image.asset(
-              AppAssets.profileAvatar,
-              width: 72,
-              height: 72,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 72,
-                height: 72,
-                color: Colors.white24,
-                child: const Icon(Icons.person, color: Colors.white, size: 36),
-              ),
+            child: ProfileAvatar(
+              profile: profile,
+              size: 72,
+              fallbackBackgroundColor: Colors.white24,
+              fallbackIconColor: Colors.white,
             ),
           ),
           const SizedBox(width: 16),
@@ -6977,6 +7083,7 @@ class DeviceSessionData {
   const DeviceSessionData({
     required this.deviceId,
     required this.deviceLabel,
+    required this.deviceName,
     required this.platform,
     required this.email,
     required this.displayName,
@@ -6989,6 +7096,7 @@ class DeviceSessionData {
 
   final String deviceId;
   final String deviceLabel;
+  final String deviceName;
   final String platform;
   final String email;
   final String displayName;
@@ -7009,6 +7117,11 @@ class DeviceSessionData {
       deviceLabel: (data['deviceLabel'] as String?)?.trim().isNotEmpty == true
           ? (data['deviceLabel'] as String).trim()
           : 'Device',
+      deviceName: (data['deviceName'] as String?)?.trim().isNotEmpty == true
+          ? (data['deviceName'] as String).trim()
+          : (data['deviceLabel'] as String?)?.trim().isNotEmpty == true
+              ? (data['deviceLabel'] as String).trim()
+              : 'Device',
       platform: (data['platform'] as String?)?.trim() ?? 'unknown',
       email: (data['email'] as String?)?.trim() ?? '',
       displayName: (data['displayName'] as String?)?.trim() ?? '',
@@ -7105,7 +7218,7 @@ class AdminPanelScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            session.deviceLabel,
+                            session.deviceName,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
@@ -7122,6 +7235,7 @@ class AdminPanelScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text('Email: ${session.email}'),
+                    Text('Device ID: ${session.deviceId}'),
                     Text('Account ID: ${session.accountId.isEmpty ? "-" : session.accountId}'),
                     Text('Platform: ${session.platform}'),
                     Text('Last seen: $lastSeen'),
