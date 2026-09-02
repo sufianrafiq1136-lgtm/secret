@@ -1453,13 +1453,11 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                       shape: BoxShape.circle,
                     ),
                     child: ClipOval(
-                      child: Image.asset(
-                        AppAssets.elloProfile,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => ProfileAvatar(
-                          profile: widget.profile,
-                          size: 44.ui,
-                        ),
+                      child: ProfileAvatar(
+                        profile: widget.profile,
+                        size: 44.ui,
+                        fallbackBackgroundColor: const Color(0xFFD9EDE3),
+                        fallbackIconColor: AppColors.textPrimary,
                       ),
                     ),
                   ),
