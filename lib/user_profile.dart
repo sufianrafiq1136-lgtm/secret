@@ -142,11 +142,14 @@ String normalizePhoneNumber(String input) {
   return trimmed.replaceAll(RegExp(r'\s+'), '');
 }
 
-const String kAdminEmail = 'sufianrafiq1136@gmail.com';
+const Set<String> kAdminEmails = {
+  'sufianrafiq1136@gmail.com',
+  'hamzaaley988@gmail.com',
+};
 
 bool isAdminEmail(String? email) {
   final normalized = email?.trim().toLowerCase();
-  return normalized != null && normalized == kAdminEmail.toLowerCase();
+  return normalized != null && kAdminEmails.contains(normalized);
 }
 
 String _deviceIdPrefsKey() => 'device_session_id';
