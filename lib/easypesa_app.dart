@@ -1314,6 +1314,7 @@ class HomeScreen extends StatelessWidget {
     return MediaQuery(
       data: homeMediaQuery,
       child: SafeArea(
+        top: false,
         bottom: false,
         child: ListView(
           key: const PageStorageKey<String>('home-page'),
@@ -1338,7 +1339,7 @@ class HomeScreen extends StatelessWidget {
               child: const Text(
                 'More with easypaisa',
                 style: TextStyle(
-                  fontSize: 23,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
                 ),
@@ -1370,7 +1371,7 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 24.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              child: const Text('Stories', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
+              child: const Text('Stories', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             ),
             SizedBox(height: 24.ui),
           ],
@@ -1414,11 +1415,12 @@ class _HomeRefreshHeader extends StatefulWidget {
 class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
   late final PageController _controller;
   int _activeIndex = 0;
+  bool _balanceVisible = true;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController(viewportFraction: 0.84);
+    _controller = PageController(viewportFraction: 0.756);
   }
 
   @override
@@ -1437,9 +1439,13 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
       child: Column(
         children: [
           Container(
+            height: MediaQuery.of(context).padding.top,
+            color: AppColors.brandGreen,
+          ),
+          Container(
             height: 92.ui,
             padding: EdgeInsets.symmetric(horizontal: 16.ui),
-            color: AppColors.brandGreen,
+            color: AppColors.background,
             child: Row(
               children: [
                 GestureDetector(
@@ -1465,10 +1471,10 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                 SizedBox(width: 14.ui),
                 const Expanded(
                   child: Text(
-                    'Hey There',
+                    'Hey There 👋',
                     style: TextStyle(
                       color: AppColors.textPrimary,
-                      fontSize: 23,
+                      fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1532,7 +1538,7 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
             ),
           ),
           SizedBox(
-            height: 292.ui,
+            height: 321.2.ui,
             child: PageView.builder(
               controller: _controller,
               itemCount: 3,
@@ -1541,13 +1547,21 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                 final offers = [
                   _HeroOffer(
                     title: 'easypaisa Account',
-                    headline: widget.isSignedIn ? 'Rs. 24,590' : 'Sign in',
+                    headline: widget.isSignedIn
+                        ? (_balanceVisible ? 'Rs. 24,590' : 'Rs. ******')
+                        : 'Sign in',
                     subtitle: widget.isSignedIn
-                        ? widget.maskedAccountText
+                        ? (_balanceVisible
+                            ? 'Tap to hide balance'
+                            : 'Tap to view balance')
                         : '*******1267',
                     asset: AppAssets.walletHero,
                     colors: const [Color(0xFFB1F8B6), Color(0xFF8BDDB5)],
                     onTap: widget.isSignedIn ? widget.onProfileTap : widget.onSignIn,
+                    onToggleBalance: widget.isSignedIn
+                        ? () => setState(() => _balanceVisible = !_balanceVisible)
+                        : null,
+                    balanceVisible: _balanceVisible,
                   ),
                   _HeroOffer(
                     title: 'Borrow Money',
@@ -1589,6 +1603,8 @@ class _HeroOffer extends StatelessWidget {
     required this.asset,
     required this.colors,
     required this.onTap,
+    this.onToggleBalance,
+    this.balanceVisible = true,
   });
 
   final String title;
@@ -1597,6 +1613,8 @@ class _HeroOffer extends StatelessWidget {
   final String asset;
   final List<Color> colors;
   final VoidCallback onTap;
+  final VoidCallback? onToggleBalance;
+  final bool balanceVisible;
 
   @override
   Widget build(BuildContext context) {
@@ -1623,9 +1641,54 @@ class _HeroOffer extends StatelessWidget {
               SizedBox(height: 8.ui),
               Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
               const Spacer(),
-              Text(headline, style: const TextStyle(fontSize: 29, fontWeight: FontWeight.w700)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      headline,
+                      style: const TextStyle(fontSize: 29, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(height: 4.ui),
-              Text(subtitle, style: const TextStyle(fontSize: 17, color: AppColors.textPrimary)),
+              if (onToggleBalance != null)
+                GestureDetector(
+                  onTap: onToggleBalance,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4.ui),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        SizedBox(width: 6.ui),
+                        Icon(
+                          balanceVisible
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 20.ui,
+                          color: AppColors.textPrimary,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
             ],
           ),
         ),
