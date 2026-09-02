@@ -49,6 +49,10 @@ class AppAssets {
   static const jazzCashBankLogo = 'assets/icons/jazzCash bank logo.jpg';
   static const easypisaBankLogo = 'assets/icons/easypisa bank logo.jpg';
   static const profileAvatar = 'assets/images/profile_avatar.png';
+  static const elloProfile = 'assets/icons/ello profile picture.jpg';
+  static const walletHero = 'assets/icons/Wallet icon.jpg';
+  static const borrowHero = 'assets/icons/borrow icon.jpg';
+  static const cardsHero = 'assets/icons/cards icon.jpg';
   static const jazzCash = 'assets/brands/jazzcash.png';
   static const easypaisaWallet = 'assets/brands/easypaisa_wallet.png';
   static const moneyBag = 'assets/icons/money_bag.jpg';
@@ -1315,7 +1319,7 @@ class HomeScreen extends StatelessWidget {
           key: const PageStorageKey<String>('home-page'),
           padding: EdgeInsets.only(bottom: 112.ui),
           children: [
-            _HomeHeaderCluster(
+            _HomeRefreshHeader(
               isSignedIn: isSignedIn,
               isAdmin: isAdmin,
               profile: profile,
@@ -1326,42 +1330,9 @@ class HomeScreen extends StatelessWidget {
               onSignIn: onSignIn,
               onProfileTap: onOpenProfileDrawer,
               onAdminTap: onOpenAdminPanel,
+              onOpenPlaceholder: onOpenPlaceholder,
             ),
-            SizedBox(height: 18.ui),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: QuickActionCard(
-                      title: 'Send Money',
-                      asset: AppAssets.sendMoney,
-                      fallbackIcon: Icons.send_outlined,
-                      onTap: onSendMoney,
-                    ),
-                  ),
-                  SizedBox(width: 16.ui),
-                  Expanded(
-                    child: QuickActionCard(
-                      title: 'Bill Payment',
-                      asset: AppAssets.billPayment,
-                      fallbackIcon: Icons.receipt_long_outlined,
-                      onTap: () => onOpenPlaceholder('Bill Payment'),
-                    ),
-                  ),
-                  SizedBox(width: 16.ui),
-                  Expanded(
-                    child: QuickActionCard(
-                      title: 'Mobile\nPackages',
-                      asset: AppAssets.mobilePackages,
-                      fallbackIcon: Icons.phone_iphone_outlined,
-                      onTap: () => onOpenPlaceholder('Mobile Packages'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 20.ui),
+            SizedBox(height: 22.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
               child: const Text(
@@ -1376,151 +1347,289 @@ class HomeScreen extends StatelessWidget {
             SizedBox(height: 12.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(32.ui),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 26,
-                      offset: Offset(0, 10),
-                    ),
-                  ],
-                ),
-                padding: EdgeInsets.fromLTRB(12.ui, 16.ui, 12.ui, 14.ui),
-                child: Column(
-                  children: [
-                    GridView.count(
-                      crossAxisCount: 4,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 0.92,
-                      children: [
-                        FeatureTile(
-                          title: 'Easyload',
-                          asset: AppAssets.easyload,
-                          fallbackIcon: Icons.add_card_outlined,
-                          onTap: () => onOpenPlaceholder('Easyload'),
-                        ),
-                        FeatureTile(
-                          title: 'Easycash\nLoan',
-                          asset: AppAssets.easycashLoan,
-                          fallbackIcon: Icons.volunteer_activism_outlined,
-                          onTap: () => onOpenPlaceholder('Easycash Loan'),
-                        ),
-                        FeatureTile(
-                          title: 'Savings\nPocket',
-                          asset: AppAssets.savingsPocket,
-                          fallbackIcon: Icons.savings_outlined,
-                          onTap: () => onOpenPlaceholder('Savings Pocket'),
-                        ),
-                        FeatureTile(
-                          title: 'Invite\n& Earn',
-                          asset: AppAssets.inviteAndEarn,
-                          fallbackIcon: Icons.people_outline_rounded,
-                          onTap: () => onOpenPlaceholder('Invite & Earn'),
-                        ),
-                        FeatureTile(
-                          title: 'Donations',
-                          asset: AppAssets.donations,
-                          fallbackIcon: Icons.volunteer_activism_outlined,
-                          onTap: () => onOpenPlaceholder('Donations'),
-                        ),
-                        FeatureTile(
-                          title: 'Term\nDeposit',
-                          asset: AppAssets.termDeposit,
-                          fallbackIcon: Icons.account_balance_wallet_outlined,
-                          onTap: () => onOpenPlaceholder('Term Deposit'),
-                        ),
-                        FeatureTile(
-                          title: 'Daily\nRewards',
-                          asset: AppAssets.dailyRewards,
-                          fallbackIcon: Icons.card_giftcard_outlined,
-                          onTap: () => onOpenPlaceholder('Daily Rewards'),
-                        ),
-                        FeatureTile(
-                          title: 'Buy Now\nPay Later',
-                          asset: AppAssets.buyNowPayLater,
-                          fallbackIcon: Icons.calendar_month_outlined,
-                          onTap: () => onOpenPlaceholder('Buy Now Pay Later'),
-                        ),
-                        FeatureTile(
-                          title: 'Insurance\nMarketplace',
-                          asset: AppAssets.insuranceMarketplace,
-                          fallbackIcon: Icons.umbrella_outlined,
-                          onTap: () =>
-                              onOpenPlaceholder('Insurance Marketplace'),
-                        ),
-                        FeatureTile(
-                          title: 'M-Tag',
-                          asset: AppAssets.mTag,
-                          fallbackIcon: Icons.route_outlined,
-                          onTap: () => onOpenPlaceholder('M-Tag'),
-                        ),
-                        FeatureTile(
-                          title: 'Rs.1 Game',
-                          asset: AppAssets.rsOneGame,
-                          fallbackIcon: Icons.celebration_outlined,
-                          onTap: () => onOpenPlaceholder('Rs.1 Game'),
-                        ),
-                        FeatureTile(
-                          title: 'See All',
-                          asset: AppAssets.quickCard,
-                          fallbackIcon: Icons.more_horiz_rounded,
-                          onTap: () => onOpenPlaceholder('More services'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10.ui),
-                    const _DotsIndicator(activeIndex: 0, count: 2),
-                  ],
-                ),
-              ),
-            ),
-            SizedBox(height: 22.ui),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              child: const Text(
-                'Get your easypaisa Debit Card',
-                style: TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ),
-            SizedBox(height: 12.ui),
-            SizedBox(
-              height: 196.ui,
-              child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: 16.ui),
-                scrollDirection: Axis.horizontal,
+              child: GridView.count(
+                crossAxisCount: 3,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 14.ui,
+                crossAxisSpacing: 14.ui,
+                childAspectRatio: 0.94,
                 children: [
-                  DebitCardTile(
-                    title: 'Online Card',
-                    subtitle: 'Only for Online\nPayments in Pakistan',
-                    backgroundColor: const Color(0xFF438E83),
-                    accentColor: const Color(0xFFF9D780),
-                    asset: AppAssets.onlineCard,
-                    onTap: () => onOpenPlaceholder('Online Card'),
-                  ),
-                  SizedBox(width: 18.ui),
-                  DebitCardTile(
-                    title: 'Plastic Card',
-                    subtitle: 'Use at any ATM or\nShop in Pakistan',
-                    backgroundColor: const Color(0xFF3C3D4D),
-                    accentColor: const Color(0xFFF9D780),
-                    asset: AppAssets.plasticCard,
-                    onTap: () => onOpenPlaceholder('Plastic Card'),
-                  ),
+                  FeatureTile(title: 'Send Money', asset: AppAssets.sendMoney, fallbackIcon: Icons.send_outlined, onTap: onSendMoney),
+                  FeatureTile(title: 'Bill Payment', asset: AppAssets.billPayment, fallbackIcon: Icons.receipt_long_outlined, onTap: () => onOpenPlaceholder('Bill Payment')),
+                  FeatureTile(title: 'Loads & Packages', asset: AppAssets.mobilePackages, fallbackIcon: Icons.phone_iphone_outlined, onTap: () => onOpenPlaceholder('Mobile Packages')),
+                  FeatureTile(title: 'M-Tag', asset: AppAssets.mTag, fallbackIcon: Icons.route_outlined, onTap: () => onOpenPlaceholder('M-Tag')),
+                  FeatureTile(title: 'Easycash', asset: AppAssets.easycashLoan, fallbackIcon: Icons.wallet_outlined, onTap: () => onOpenPlaceholder('Easycash Loan')),
+                  FeatureTile(title: 'Term Deposit', asset: AppAssets.termDeposit, fallbackIcon: Icons.account_balance_wallet_outlined, onTap: () => onOpenPlaceholder('Term Deposit')),
+                  FeatureTile(title: 'Insurance', asset: AppAssets.insuranceMarketplace, fallbackIcon: Icons.umbrella_outlined, onTap: () => onOpenPlaceholder('Insurance Marketplace')),
+                  FeatureTile(title: 'Rs. 1 Game', asset: AppAssets.rsOneGame, fallbackIcon: Icons.celebration_outlined, onTap: () => onOpenPlaceholder('Rs.1 Game')),
+                  FeatureTile(title: 'See All', asset: AppAssets.quickCard, fallbackIcon: Icons.more_horiz_rounded, onTap: () => onOpenPlaceholder('More services')),
                 ],
               ),
             ),
             SizedBox(height: 24.ui),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.ui),
+              child: const Text('Stories', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
+            ),
+            SizedBox(height: 24.ui),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeRefreshHeader extends StatefulWidget {
+  const _HomeRefreshHeader({
+    required this.isSignedIn,
+    required this.isAdmin,
+    required this.profile,
+    required this.maskedAccountText,
+    required this.onSearch,
+    required this.onNotifications,
+    required this.onLogout,
+    required this.onSignIn,
+    required this.onProfileTap,
+    required this.onAdminTap,
+    required this.onOpenPlaceholder,
+  });
+
+  final bool isSignedIn;
+  final bool isAdmin;
+  final UserProfileData profile;
+  final String maskedAccountText;
+  final VoidCallback onSearch;
+  final VoidCallback onNotifications;
+  final VoidCallback onLogout;
+  final VoidCallback onSignIn;
+  final VoidCallback onProfileTap;
+  final VoidCallback onAdminTap;
+  final ValueChanged<String> onOpenPlaceholder;
+
+  @override
+  State<_HomeRefreshHeader> createState() => _HomeRefreshHeaderState();
+}
+
+class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
+  late final PageController _controller;
+  int _activeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(viewportFraction: 0.84);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: AppColors.brandGreen,
+        systemNavigationBarColor: AppColors.background,
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 92.ui,
+            padding: EdgeInsets.symmetric(horizontal: 16.ui),
+            color: AppColors.brandGreen,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onProfileTap,
+                  child: Container(
+                    width: 48.ui,
+                    height: 48.ui,
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        AppAssets.elloProfile,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => ProfileAvatar(
+                          profile: widget.profile,
+                          size: 44.ui,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 14.ui),
+                const Expanded(
+                  child: Text(
+                    'Hey There',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: widget.onNotifications,
+                  icon: const Icon(Icons.notifications_none_rounded),
+                  color: AppColors.textPrimary,
+                  iconSize: 29.ui,
+                  tooltip: 'Notifications',
+                ),
+                if (widget.isSignedIn)
+                  IconButton(
+                    onPressed: widget.onLogout,
+                    icon: const Icon(Icons.logout_rounded),
+                    color: AppColors.danger,
+                    iconSize: 27.ui,
+                    tooltip: 'Logout',
+                  ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.ui, 16.ui, 16.ui, 18.ui),
+            child: Material(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28.ui),
+              child: InkWell(
+                onTap: widget.onSearch,
+                borderRadius: BorderRadius.circular(28.ui),
+                child: Container(
+                  height: 58.ui,
+                  padding: EdgeInsets.symmetric(horizontal: 12.ui),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28.ui),
+                    border: Border.all(color: const Color(0xFFD8D8DA), width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      ClipOval(
+                        child: Image.asset(
+                          AppAssets.elloProfile,
+                          width: 45.ui,
+                          height: 45.ui,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      SizedBox(width: 12.ui),
+                      const Text(
+                        'Search or Ask Ello',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 292.ui,
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: 3,
+              onPageChanged: (index) => setState(() => _activeIndex = index),
+              itemBuilder: (context, index) {
+                final offers = [
+                  _HeroOffer(
+                    title: 'easypaisa Account',
+                    headline: widget.isSignedIn ? 'Rs. 24,590' : 'Sign in',
+                    subtitle: widget.isSignedIn
+                        ? widget.maskedAccountText
+                        : '*******1267',
+                    asset: AppAssets.walletHero,
+                    colors: const [Color(0xFFB1F8B6), Color(0xFF8BDDB5)],
+                    onTap: widget.isSignedIn ? widget.onProfileTap : widget.onSignIn,
+                  ),
+                  _HeroOffer(
+                    title: 'Borrow Money',
+                    headline: 'Get up to Rs. 30,000',
+                    subtitle: 'Instant loan, no hassle',
+                    asset: AppAssets.borrowHero,
+                    colors: const [Color(0xFFFFF0A5), Color(0xFFE8D96B)],
+                    onTap: () => widget.onSignIn(),
+                  ),
+                  _HeroOffer(
+                    title: 'Debit & Credit Card',
+                    headline: 'Get your Card',
+                    subtitle: 'Tap to explore and apply',
+                    asset: AppAssets.cardsHero,
+                    colors: const [Color(0xFFC8FBDD), Color(0xFF43E79D)],
+                    onTap: () => widget.onOpenPlaceholder('Debit & Credit Card'),
+                  ),
+                ];
+                return Padding(
+                  padding: EdgeInsets.only(right: 12.ui),
+                  child: offers[index],
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 12.ui),
+          _DotsIndicator(activeIndex: _activeIndex, count: 3),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroOffer extends StatelessWidget {
+  const _HeroOffer({
+    required this.title,
+    required this.headline,
+    required this.subtitle,
+    required this.asset,
+    required this.colors,
+    required this.onTap,
+  });
+
+  final String title;
+  final String headline;
+  final String subtitle;
+  final String asset;
+  final List<Color> colors;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(28.ui),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28.ui),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(24.ui, 20.ui, 20.ui, 18.ui),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: colors),
+            borderRadius: BorderRadius.circular(28.ui),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                height: 112.ui,
+                child: Image.asset(asset, fit: BoxFit.contain),
+              ),
+              SizedBox(height: 8.ui),
+              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Text(headline, style: const TextStyle(fontSize: 29, fontWeight: FontWeight.w700)),
+              SizedBox(height: 4.ui),
+              Text(subtitle, style: const TextStyle(fontSize: 17, color: AppColors.textPrimary)),
+            ],
+          ),
         ),
       ),
     );
@@ -2316,31 +2425,49 @@ class FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(13.5.ui),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AssetOrIcon(
-            asset: asset,
-            fallbackIcon: fallbackIcon,
-            size: 60.ui * HomeScale.factor,
-            color: AppColors.textPrimary,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16.ui),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16.ui),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 5.ui, vertical: 10.ui),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.ui),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
           ),
-          SizedBox(height: 4.5.ui),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: const TextStyle(
-              fontSize: 11,
-              height: 1.05,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF403B4C),
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AssetOrIcon(
+                asset: asset,
+                fallbackIcon: fallbackIcon,
+                size: 54.ui * HomeScale.factor,
+                color: AppColors.textPrimary,
+              ),
+              SizedBox(height: 4.5.ui),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.05,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF403B4C),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
