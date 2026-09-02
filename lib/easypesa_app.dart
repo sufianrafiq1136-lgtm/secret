@@ -1414,13 +1414,12 @@ class _HomeRefreshHeader extends StatefulWidget {
 
 class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
   late final PageController _controller;
-  int _activeIndex = 0;
   bool _balanceVisible = true;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController(viewportFraction: 0.756);
+    _controller = PageController(viewportFraction: 0.75);
   }
 
   @override
@@ -1538,11 +1537,11 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
             ),
           ),
           SizedBox(
-            height: 321.2.ui,
+            height: MediaQuery.of(context).size.width * 0.607,
             child: PageView.builder(
               controller: _controller,
+              padEnds: false,
               itemCount: 3,
-              onPageChanged: (index) => setState(() => _activeIndex = index),
               itemBuilder: (context, index) {
                 final offers = [
                   _HeroOffer(
@@ -1580,15 +1579,22 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                     onTap: () => widget.onOpenPlaceholder('Debit & Credit Card'),
                   ),
                 ];
-                return Padding(
-                  padding: EdgeInsets.only(right: 12.ui),
-                  child: offers[index],
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.748,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 4.ui : 0,
+                        right: 10.ui,
+                      ),
+                      child: offers[index],
+                    ),
+                  ),
                 );
               },
             ),
           ),
-          SizedBox(height: 12.ui),
-          _DotsIndicator(activeIndex: _activeIndex, count: 3),
         ],
       ),
     );
