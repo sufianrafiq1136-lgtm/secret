@@ -1345,13 +1345,14 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 12.ui),
+            SizedBox(height: 0.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
               child: GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
                 mainAxisSpacing: 14.ui,
                 crossAxisSpacing: 14.ui,
                 childAspectRatio: 0.94,
@@ -2512,7 +2513,7 @@ class FeatureTile extends StatelessWidget {
             ],
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               AssetOrIcon(
                 asset: asset,
@@ -2520,7 +2521,7 @@ class FeatureTile extends StatelessWidget {
                 size: 54.ui * HomeScale.factor,
                 color: AppColors.textPrimary,
               ),
-              SizedBox(height: 4.5.ui),
+              SizedBox(height: 4.ui),
               Text(
                 title,
                 textAlign: TextAlign.center,
