@@ -6157,242 +6157,251 @@ Future<void> showReceiptScreen(
       fullscreenDialog: true,
       builder: (pageContext) => StatefulBuilder(
         builder: (pageContext, setState) => Scaffold(
-          backgroundColor: receiptOuterBackground,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
-              child: RepaintBoundary(
-                key: receiptKey,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          ui.Color.fromARGB(255, 225, 244, 234),
-                          receiptBackground,
-                        ],
-                        stops: [0, 0.42],
-                      ),
-                    ),
-                    child: SizedBox.expand(
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              child: SingleChildScrollView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  14,
-                                  20,
-                                  20,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Center(
-                                      child: Image.asset(
-                                        AppAssets.transactionReceiptSuccess,
-                                        width: 82,
-                                        height: 82,
-                                        fit: BoxFit.contain,
+          backgroundColor: receiptBackground,
+          body: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [receiptOuterBackground, receiptBackground],
+              ),
+            ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                child: RepaintBoundary(
+                  key: receiptKey,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: Container(
+                      color: receiptBackground,
+                      child: SizedBox.expand(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    14,
+                                    20,
+                                    20,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Center(
+                                        child: Image.asset(
+                                          AppAssets.transactionReceiptSuccess,
+                                          width: 82,
+                                          height: 82,
+                                          fit: BoxFit.contain,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    const Center(
-                                      child: Text(
-                                        'Transaction Successful',
+                                      const SizedBox(height: 6),
+                                      const Center(
+                                        child: Text(
+                                          'Transaction Successful',
+                                          style: TextStyle(
+                                            fontSize: 17,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      const Center(
+                                        child: Text(
+                                          'Money has been sent',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 10),
+                                      _ReceiptInfoRow(
+                                        label: 'Transaction ID',
+                                        value: '#515320532390',
+                                      ),
+                                      _ReceiptInfoRow(
+                                        label: 'Date & Time',
+                                        value: receiptDateTime,
+                                      ),
+                                      const _ReceiptInfoRow(
+                                        label: 'Funding Source',
+                                        value: 'easypaisa Account',
+                                      ),
+                                      const Divider(height: 24),
+                                      const _ReceiptSectionTitle('Sent to'),
+                                      _ReceiptInfoRow(
+                                        label: 'Name',
+                                        value: recipientName,
+                                      ),
+                                      _ReceiptInfoRow(
+                                        label: 'Raast IBAN',
+                                        value:
+                                            recipientAccount
+                                                .trim()
+                                                .toUpperCase()
+                                                .startsWith('PK')
+                                            ? maskAccountNumber(
+                                                recipientAccount,
+                                              )
+                                            : bankName ?? 'Not available',
+                                      ),
+                                      _ReceiptInfoRow(
+                                        label: 'Account Number',
+                                        value: recipientAccount,
+                                      ),
+                                      const Divider(height: 24),
+                                      const _ReceiptSectionTitle('Sent by'),
+                                      _ReceiptInfoRow(
+                                        label: 'Name',
+                                        value: profile.displayName,
+                                      ),
+                                      _ReceiptInfoRow(
+                                        label: 'Account Number',
+                                        value: profile.phoneNumber,
+                                      ),
+                                      const Divider(height: 24),
+                                      const _ReceiptSectionTitle('Charges'),
+                                      _ReceiptInfoRow(
+                                        label: 'Amount',
+                                        value:
+                                            'Rs. ${amount.toStringAsFixed(2)}',
+                                      ),
+                                      const _ReceiptInfoRow(
+                                        label: 'Fee',
+                                        value: 'Rs. 0.00',
+                                      ),
+                                      const Divider(height: 24),
+                                      _ReceiptInfoRow(
+                                        label: 'Total Amount',
+                                        value:
+                                            'Rs. ${amount.toStringAsFixed(2)}',
+                                        isEmphasized: true,
+                                      ),
+                                      const SizedBox(height: 17),
+                                      const Center(
+                                        child: Text.rich(
+                                          TextSpan(
+                                            text: 'Paid via  ',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: AppColors.textSecondary,
+                                            ),
+                                            children: [
+                                              TextSpan(
+                                                text: 'easypaisa',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppColors.textPrimary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(
+                                12,
+                                12,
+                                12,
+                                20,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () => Navigator.of(
+                                        pageContext,
+                                      ).popUntil((route) => route.isFirst),
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size(0, 38),
+                                        side: const BorderSide(
+                                          color: AppColors.brandGreen,
+                                          width: 1.3,
+                                        ),
+                                        shape: const StadiumBorder(),
+                                      ),
+                                      child: const Text(
+                                        'Back to Home',
                                         style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w700,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 3),
-                                    const Center(
-                                      child: Text(
-                                        'Money has been sent',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 14),
-                                    const Divider(height: 1),
-                                    const SizedBox(height: 10),
-                                    _ReceiptInfoRow(
-                                      label: 'Transaction ID',
-                                      value: '#515320532390',
-                                    ),
-                                    _ReceiptInfoRow(
-                                      label: 'Date & Time',
-                                      value: receiptDateTime,
-                                    ),
-                                    const _ReceiptInfoRow(
-                                      label: 'Funding Source',
-                                      value: 'easypaisa Account',
-                                    ),
-                                    const Divider(height: 24),
-                                    const _ReceiptSectionTitle('Sent to'),
-                                    _ReceiptInfoRow(
-                                      label: 'Name',
-                                      value: recipientName,
-                                    ),
-                                    _ReceiptInfoRow(
-                                      label: 'Raast IBAN',
-                                      value:
-                                          recipientAccount
-                                              .trim()
-                                              .toUpperCase()
-                                              .startsWith('PK')
-                                          ? maskAccountNumber(recipientAccount)
-                                          : bankName ?? 'Not available',
-                                    ),
-                                    _ReceiptInfoRow(
-                                      label: 'Account Number',
-                                      value: recipientAccount,
-                                    ),
-                                    const Divider(height: 24),
-                                    const _ReceiptSectionTitle('Sent by'),
-                                    _ReceiptInfoRow(
-                                      label: 'Name',
-                                      value: profile.displayName,
-                                    ),
-                                    _ReceiptInfoRow(
-                                      label: 'Account Number',
-                                      value: profile.phoneNumber,
-                                    ),
-                                    const Divider(height: 24),
-                                    const _ReceiptSectionTitle('Charges'),
-                                    _ReceiptInfoRow(
-                                      label: 'Amount',
-                                      value: 'Rs. ${amount.toStringAsFixed(2)}',
-                                    ),
-                                    const _ReceiptInfoRow(
-                                      label: 'Fee',
-                                      value: 'Rs. 0.00',
-                                    ),
-                                    const Divider(height: 24),
-                                    _ReceiptInfoRow(
-                                      label: 'Total Amount',
-                                      value: 'Rs. ${amount.toStringAsFixed(2)}',
-                                      isEmphasized: true,
-                                    ),
-                                    const SizedBox(height: 17),
-                                    const Center(
-                                      child: Text.rich(
-                                        TextSpan(
-                                          text: 'Paid via  ',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'easypaisa',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w800,
-                                                color: AppColors.textPrimary,
-                                              ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  _ReceiptRoundAction(
+                                    icon: Icons.share_outlined,
+                                    busy: isProcessing,
+                                    onTap: () => runReceiptAction(
+                                      () => setState(() {}),
+                                      (bytes) async {
+                                        final result = await Share.shareXFiles(
+                                          [
+                                            XFile.fromData(
+                                              bytes,
+                                              mimeType: 'image/png',
                                             ),
                                           ],
-                                        ),
-                                      ),
+                                          subject:
+                                              'easypaisa Transaction Receipt',
+                                          fileNameOverrides: const [
+                                            'easypaisa_transaction_receipt.png',
+                                          ],
+                                        );
+                                        if (result.status ==
+                                            ShareResultStatus.success) {
+                                          showResultMessage(
+                                            'Receipt shared successfully.',
+                                          );
+                                        }
+                                      },
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  _ReceiptRoundAction(
+                                    icon: Icons.download_outlined,
+                                    busy: isProcessing,
+                                    onTap: () => runReceiptAction(
+                                      () => setState(() {}),
+                                      (bytes) async {
+                                        var hasAccess = await Gal.hasAccess();
+                                        if (!hasAccess)
+                                          hasAccess = await Gal.requestAccess();
+                                        if (!hasAccess) {
+                                          throw StateError(
+                                            'Gallery permission was denied.',
+                                          );
+                                        }
+                                        await Gal.putImageBytes(
+                                          bytes,
+                                          name: 'easypaisa_transaction_receipt',
+                                        );
+                                        showResultMessage(
+                                          'Receipt saved to Photos.',
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: () => Navigator.of(
-                                      pageContext,
-                                    ).popUntil((route) => route.isFirst),
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: const Size(0, 38),
-                                      side: const BorderSide(
-                                        color: AppColors.brandGreen,
-                                        width: 1.3,
-                                      ),
-                                      shape: const StadiumBorder(),
-                                    ),
-                                    child: const Text(
-                                      'Back to Home',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                _ReceiptRoundAction(
-                                  icon: Icons.share_outlined,
-                                  busy: isProcessing,
-                                  onTap: () => runReceiptAction(
-                                    () => setState(() {}),
-                                    (bytes) async {
-                                      final result = await Share.shareXFiles(
-                                        [
-                                          XFile.fromData(
-                                            bytes,
-                                            mimeType: 'image/png',
-                                          ),
-                                        ],
-                                        subject:
-                                            'easypaisa Transaction Receipt',
-                                        fileNameOverrides: const [
-                                          'easypaisa_transaction_receipt.png',
-                                        ],
-                                      );
-                                      if (result.status ==
-                                          ShareResultStatus.success) {
-                                        showResultMessage(
-                                          'Receipt shared successfully.',
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                _ReceiptRoundAction(
-                                  icon: Icons.download_outlined,
-                                  busy: isProcessing,
-                                  onTap: () => runReceiptAction(
-                                    () => setState(() {}),
-                                    (bytes) async {
-                                      var hasAccess = await Gal.hasAccess();
-                                      if (!hasAccess)
-                                        hasAccess = await Gal.requestAccess();
-                                      if (!hasAccess) {
-                                        throw StateError(
-                                          'Gallery permission was denied.',
-                                        );
-                                      }
-                                      await Gal.putImageBytes(
-                                        bytes,
-                                        name: 'easypaisa_transaction_receipt',
-                                      );
-                                      showResultMessage(
-                                        'Receipt saved to Photos.',
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
