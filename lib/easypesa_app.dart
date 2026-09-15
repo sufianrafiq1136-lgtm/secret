@@ -6194,33 +6194,33 @@ Future<void> showReceiptScreen(
                                       Center(
                                         child: Image.asset(
                                           AppAssets.transactionReceiptSuccess,
-                                          width: 82,
-                                          height: 82,
+                                          width: 92,
+                                          height: 92,
                                           fit: BoxFit.contain,
                                         ),
                                       ),
-                                      const SizedBox(height: 6),
+                                      const SizedBox(height: 8),
                                       const Center(
                                         child: Text(
                                           'Transaction Successful',
                                           style: TextStyle(
-                                            fontSize: 17,
+                                            fontSize: 20,
                                             fontWeight: FontWeight.w700,
                                             color: AppColors.textPrimary,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: 4),
                                       const Center(
                                         child: Text(
                                           'Money has been sent',
                                           style: TextStyle(
-                                            fontSize: 11,
+                                            fontSize: 14,
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 14),
+                                      const SizedBox(height: 16),
                                       const Divider(height: 1),
                                       const SizedBox(height: 10),
                                       _ReceiptInfoRow(
@@ -6336,7 +6336,7 @@ Future<void> showReceiptScreen(
                                       child: const Text(
                                         'Back to Home',
                                         style: TextStyle(
-                                          fontSize: 11,
+                                          fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.textPrimary,
                                         ),
@@ -6423,11 +6423,11 @@ class _ReceiptSectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.only(bottom: 9),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: 14,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
@@ -6450,12 +6450,12 @@ class _ReceiptInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: 11,
+      fontSize: 13,
       fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w500,
       color: AppColors.textPrimary,
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
