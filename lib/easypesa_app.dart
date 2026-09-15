@@ -1,4 +1,4 @@
- import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -83,8 +83,7 @@ class AppAssets {
   static const mTag = 'assets/icons/M-Tag.png';
   static const rsOneGame = 'assets/icons/Rs .1 Game.png';
   static const loadingIcon = 'assets/icons/loadeing icon.jpg';
-  static const authLockLogo =
-      'assets/logos/authentication logo.jpg';
+  static const authLockLogo = 'assets/logos/authentication logo.jpg';
   static const abhiMicrofinanceBank =
       'assets/logos/abhli micro finance bank.png';
   static const alBarakaIslamicBank = 'assets/logos/Al Baraka islami Bank.jpg';
@@ -247,9 +246,8 @@ class FavoriteRecipientsStore {
       final parsed = decoded
           .whereType<Map>()
           .map(
-            (entry) => FavoriteRecipient.fromJson(
-              Map<String, dynamic>.from(entry),
-            ),
+            (entry) =>
+                FavoriteRecipient.fromJson(Map<String, dynamic>.from(entry)),
           )
           .where(
             (item) =>
@@ -272,7 +270,9 @@ class FavoriteRecipientsStore {
       recipient,
       ...current.where((item) => item.id != recipient.id),
     ];
-    final serialized = jsonEncode(next.take(20).map((item) => item.toJson()).toList());
+    final serialized = jsonEncode(
+      next.take(20).map((item) => item.toJson()).toList(),
+    );
     await prefs.setString(_prefsKey, serialized);
 
     final favoritesCollection = await accountCollection('favorites');
@@ -319,25 +319,27 @@ class FavoriteRecipientsStore {
     if (favoritesCollection == null) return;
     final snapshot = await favoritesCollection.get();
     if (snapshot.docs.isEmpty) return;
-    final favorites = snapshot.docs
-        .map(
-          (doc) => FavoriteRecipient(
-            recipientName: (doc.data()['recipientName'] as String?) ?? '',
-            accountNumber: (doc.data()['accountNumber'] as String?) ?? '',
-            bankName: (doc.data()['bankName'] as String?) ?? '',
-            logoAsset: (doc.data()['logoAsset'] as String?) ?? '',
-            savedAtMs: (doc.data()['savedAtMs'] as num?)?.toInt() ??
-                DateTime.now().millisecondsSinceEpoch,
-          ),
-        )
-        .where(
-          (item) =>
-              item.recipientName.trim().isNotEmpty &&
-              item.accountNumber.trim().isNotEmpty &&
-              item.bankName.trim().isNotEmpty,
-        )
-        .toList()
-      ..sort((a, b) => b.savedAtMs.compareTo(a.savedAtMs));
+    final favorites =
+        snapshot.docs
+            .map(
+              (doc) => FavoriteRecipient(
+                recipientName: (doc.data()['recipientName'] as String?) ?? '',
+                accountNumber: (doc.data()['accountNumber'] as String?) ?? '',
+                bankName: (doc.data()['bankName'] as String?) ?? '',
+                logoAsset: (doc.data()['logoAsset'] as String?) ?? '',
+                savedAtMs:
+                    (doc.data()['savedAtMs'] as num?)?.toInt() ??
+                    DateTime.now().millisecondsSinceEpoch,
+              ),
+            )
+            .where(
+              (item) =>
+                  item.recipientName.trim().isNotEmpty &&
+                  item.accountNumber.trim().isNotEmpty &&
+                  item.bankName.trim().isNotEmpty,
+            )
+            .toList()
+          ..sort((a, b) => b.savedAtMs.compareTo(a.savedAtMs));
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
@@ -384,10 +386,12 @@ class TransactionRecord {
     QueryDocumentSnapshot<Map<String, dynamic>> doc,
   ) {
     final data = doc.data();
-    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final timestamp =
+        (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
     return TransactionRecord(
       id: doc.id,
-      title: (data['title'] as String?) ??
+      title:
+          (data['title'] as String?) ??
           'Money Transfer via Raast - ${(data['recipientName'] as String?) ?? ''}',
       time: _formatDisplayTime(timestamp),
       amount: (data['amount'] as num?)?.toDouble() ?? 0,
@@ -408,8 +412,8 @@ String _formatDisplayTime(DateTime value) {
   final hour = value.hour == 0
       ? 12
       : value.hour > 12
-          ? value.hour - 12
-          : value.hour;
+      ? value.hour - 12
+      : value.hour;
   final minute = value.minute.toString().padLeft(2, '0');
   final suffix = value.hour >= 12 ? 'PM' : 'AM';
   return '$hour:$minute $suffix';
@@ -525,9 +529,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _notificationOpenSubscription = TransactionNotificationService.instance
+    _notificationOpenSubscription = TransactionNotificationService
+        .instance
         .notificationOpens
-        .listen((notificationId) => _openNotificationInbox(notificationId: notificationId));
+        .listen(
+          (notificationId) =>
+              _openNotificationInbox(notificationId: notificationId),
+        );
     _restoreAuthState();
   }
 
@@ -555,8 +563,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
     setState(() {
       _rememberedEmail = (email == null || email.isEmpty) ? null : email;
-      _lastUnlockAt =
-          lastUnlockMs == null ? null : DateTime.fromMillisecondsSinceEpoch(lastUnlockMs);
+      _lastUnlockAt = lastUnlockMs == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(lastUnlockMs);
       _authPromptMode = _rememberedEmail == null
           ? _AuthPromptMode.credentials
           : _AuthPromptMode.pin;
@@ -584,7 +593,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _checkForRemoteLogout() async {
     if (!_isUnlocked) return;
-    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
     if (currentUser == null) return;
     final prefs = await SharedPreferences.getInstance();
     final deviceId = prefs.getString('device_session_id')?.trim();
@@ -596,7 +607,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         .get();
     final data = snapshot.data();
     final shouldForceLogout =
-        data == null || data['logoutRequested'] == true || data['isActive'] == false;
+        data == null ||
+        data['logoutRequested'] == true ||
+        data['isActive'] == false;
     if (!shouldForceLogout) return;
     if (!mounted) return;
     await TransactionNotificationService.instance.deactivateCurrentDevice();
@@ -619,8 +632,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _unlock() {
     if (!mounted) return;
-    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
-    final accountIdFuture = Firebase.apps.isNotEmpty ? activeAccountId() : Future<String?>.value(null);
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
+    final accountIdFuture = Firebase.apps.isNotEmpty
+        ? activeAccountId()
+        : Future<String?>.value(null);
     accountIdFuture.then((accountId) {
       if (!mounted) return;
       setState(() {
@@ -630,7 +647,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (currentUser != null) {
         recordDeviceSession(user: currentUser, accountId: accountId);
         unawaited(
-          TransactionNotificationService.instance.requestPermissionAndRegisterDevice(),
+          TransactionNotificationService.instance
+              .requestPermissionAndRegisterDevice(),
         );
       }
       final pendingNotificationId =
@@ -647,10 +665,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _lock() {
-    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
     if (currentUser != null) {
       clearDeviceSession(user: currentUser);
-      unawaited(TransactionNotificationService.instance.deactivateCurrentDevice());
+      unawaited(
+        TransactionNotificationService.instance.deactivateCurrentDevice(),
+      );
     }
     _deviceSessionTimer?.cancel();
     if (!mounted) return;
@@ -711,7 +733,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openProfileDrawer() async {
     if (!mounted) return;
-    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
     if (!_isUnlocked || currentUser == null) {
       _openAuthScreen();
       return;
@@ -733,7 +757,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 final profile = snapshot.data;
                 return _ProfileDrawer(
                   profile: profile,
-                  isLoadingProfile: snapshot.connectionState == ConnectionState.waiting,
+                  isLoadingProfile:
+                      snapshot.connectionState == ConnectionState.waiting,
                   onMyAccount: () {
                     Navigator.of(dialogContext).pop();
                     setState(() => _pageIndex = 3);
@@ -872,14 +897,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser =
-        Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
 
     return FutureBuilder<UserProfileData>(
       future: resolveUserProfile(),
       builder: (context, snapshot) {
         final accountId = currentUser == null ? null : snapshot.data?.accountId;
-        final profile = snapshot.data ?? UserProfileData.fallback(currentUser, accountId);
+        final profile =
+            snapshot.data ?? UserProfileData.fallback(currentUser, accountId);
 
         final pages = <Widget>[
           HomeScreen(
@@ -914,7 +941,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   child: ColoredBox(
                     color: Color(0x11000000),
                     child: Center(
-                      child: CircularProgressIndicator(color: AppColors.brandGreen),
+                      child: CircularProgressIndicator(
+                        color: AppColors.brandGreen,
+                      ),
                     ),
                   ),
                 ),
@@ -938,7 +967,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _openNotificationInbox({String? notificationId}) {
-    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = Firebase.apps.isNotEmpty
+        ? FirebaseAuth.instance.currentUser
+        : null;
     if (!_isUnlocked || currentUser == null) {
       _openAuthScreen();
       return;
@@ -946,31 +977,37 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final navigator = appNavigatorKey.currentState;
     if (navigator == null) return;
     if (notificationId != null) {
-      TransactionNotificationService.instance.consumePendingNotification(notificationId);
+      TransactionNotificationService.instance.consumePendingNotification(
+        notificationId,
+      );
     }
     navigator.push(
       MaterialPageRoute<void>(
-        builder: (_) => NotificationInboxScreen(initialNotificationId: notificationId),
+        builder: (_) =>
+            NotificationInboxScreen(initialNotificationId: notificationId),
       ),
     );
   }
 
   Future<void> _openAuthScreen() async {
     if (_authDialogOpen) return;
-    _authPromptMode =
-        _rememberedEmail == null ? _AuthPromptMode.credentials : _AuthPromptMode.pin;
+    _authPromptMode = _rememberedEmail == null
+        ? _AuthPromptMode.credentials
+        : _AuthPromptMode.pin;
     _showAuthIfNeeded();
   }
 
   void _openAdminPanel() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const AdminPanelScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => const AdminPanelScreen()));
   }
 
   void _openSendMoneyFlow() {
     final hasFirebaseApp = Firebase.apps.isNotEmpty;
-    final currentUser = hasFirebaseApp ? FirebaseAuth.instance.currentUser : null;
+    final currentUser = hasFirebaseApp
+        ? FirebaseAuth.instance.currentUser
+        : null;
     if (!_isUnlocked || currentUser == null) {
       _openAuthScreen();
       return;
@@ -1415,22 +1452,70 @@ class HomeScreen extends StatelessWidget {
                 crossAxisSpacing: 14.ui,
                 childAspectRatio: 0.94,
                 children: [
-                  FeatureTile(title: 'Send Money', asset: AppAssets.sendMoney, fallbackIcon: Icons.send_outlined, onTap: onSendMoney),
-                  FeatureTile(title: 'Bill Payment', asset: AppAssets.billPayment, fallbackIcon: Icons.receipt_long_outlined, onTap: () => onOpenPlaceholder('Bill Payment')),
-                  FeatureTile(title: 'Loads & Packages', asset: AppAssets.mobilePackages, fallbackIcon: Icons.phone_iphone_outlined, onTap: () => onOpenPlaceholder('Mobile Packages')),
-                  FeatureTile(title: 'M-Tag', asset: AppAssets.mTag, fallbackIcon: Icons.route_outlined, onTap: () => onOpenPlaceholder('M-Tag')),
-                  FeatureTile(title: 'Easycash', asset: AppAssets.easycashLoan, fallbackIcon: Icons.wallet_outlined, onTap: () => onOpenPlaceholder('Easycash Loan')),
-                  FeatureTile(title: 'Term Deposit', asset: AppAssets.termDeposit, fallbackIcon: Icons.account_balance_wallet_outlined, onTap: () => onOpenPlaceholder('Term Deposit')),
-                  FeatureTile(title: 'Insurance', asset: AppAssets.insuranceMarketplace, fallbackIcon: Icons.umbrella_outlined, onTap: () => onOpenPlaceholder('Insurance Marketplace')),
-                  FeatureTile(title: 'Rs. 1 Game', asset: AppAssets.rsOneGame, fallbackIcon: Icons.celebration_outlined, onTap: () => onOpenPlaceholder('Rs.1 Game')),
-                  FeatureTile(title: 'See All', asset: AppAssets.quickCard, fallbackIcon: Icons.more_horiz_rounded, onTap: () => onOpenPlaceholder('More services')),
+                  FeatureTile(
+                    title: 'Send Money',
+                    asset: AppAssets.sendMoney,
+                    fallbackIcon: Icons.send_outlined,
+                    onTap: onSendMoney,
+                  ),
+                  FeatureTile(
+                    title: 'Bill Payment',
+                    asset: AppAssets.billPayment,
+                    fallbackIcon: Icons.receipt_long_outlined,
+                    onTap: () => onOpenPlaceholder('Bill Payment'),
+                  ),
+                  FeatureTile(
+                    title: 'Loads & Packages',
+                    asset: AppAssets.mobilePackages,
+                    fallbackIcon: Icons.phone_iphone_outlined,
+                    onTap: () => onOpenPlaceholder('Mobile Packages'),
+                  ),
+                  FeatureTile(
+                    title: 'M-Tag',
+                    asset: AppAssets.mTag,
+                    fallbackIcon: Icons.route_outlined,
+                    onTap: () => onOpenPlaceholder('M-Tag'),
+                  ),
+                  FeatureTile(
+                    title: 'Easycash',
+                    asset: AppAssets.easycashLoan,
+                    fallbackIcon: Icons.wallet_outlined,
+                    onTap: () => onOpenPlaceholder('Easycash Loan'),
+                  ),
+                  FeatureTile(
+                    title: 'Term Deposit',
+                    asset: AppAssets.termDeposit,
+                    fallbackIcon: Icons.account_balance_wallet_outlined,
+                    onTap: () => onOpenPlaceholder('Term Deposit'),
+                  ),
+                  FeatureTile(
+                    title: 'Insurance',
+                    asset: AppAssets.insuranceMarketplace,
+                    fallbackIcon: Icons.umbrella_outlined,
+                    onTap: () => onOpenPlaceholder('Insurance Marketplace'),
+                  ),
+                  FeatureTile(
+                    title: 'Rs. 1 Game',
+                    asset: AppAssets.rsOneGame,
+                    fallbackIcon: Icons.celebration_outlined,
+                    onTap: () => onOpenPlaceholder('Rs.1 Game'),
+                  ),
+                  FeatureTile(
+                    title: 'See All',
+                    asset: AppAssets.quickCard,
+                    fallbackIcon: Icons.more_horiz_rounded,
+                    onTap: () => onOpenPlaceholder('More services'),
+                  ),
                 ],
               ),
             ),
             SizedBox(height: 24.ui),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.ui),
-              child: const Text('Stories', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Stories',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              ),
             ),
             SizedBox(height: 24.ui),
           ],
@@ -1565,7 +1650,10 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                   padding: EdgeInsets.symmetric(horizontal: 12.ui),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28.ui),
-                    border: Border.all(color: const Color(0xFFD8D8DA), width: 1.5),
+                    border: Border.all(
+                      color: const Color(0xFFD8D8DA),
+                      width: 1.5,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -1607,14 +1695,17 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                         : 'Sign in',
                     subtitle: widget.isSignedIn
                         ? (_balanceVisible
-                            ? 'Tap to hide balance'
-                            : 'Tap to view balance')
+                              ? 'Tap to hide balance'
+                              : 'Tap to view balance')
                         : '*******1267',
                     asset: AppAssets.walletHero,
                     colors: const [Color(0xFFB1F8B6), Color(0xFF8BDDB5)],
-                    onTap: widget.isSignedIn ? widget.onProfileTap : widget.onSignIn,
+                    onTap: widget.isSignedIn
+                        ? widget.onProfileTap
+                        : widget.onSignIn,
                     onToggleBalance: widget.isSignedIn
-                        ? () => setState(() => _balanceVisible = !_balanceVisible)
+                        ? () =>
+                              setState(() => _balanceVisible = !_balanceVisible)
                         : null,
                     balanceVisible: _balanceVisible,
                   ),
@@ -1632,7 +1723,8 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                     subtitle: 'Tap to explore and apply',
                     asset: AppAssets.cardsHero,
                     colors: const [Color(0xFFC8FBDD), Color(0xFF43E79D)],
-                    onTap: () => widget.onOpenPlaceholder('Debit & Credit Card'),
+                    onTap: () =>
+                        widget.onOpenPlaceholder('Debit & Credit Card'),
                   ),
                 ];
                 return Align(
@@ -1701,7 +1793,13 @@ class _HeroOffer extends StatelessWidget {
                 child: Image.asset(asset, fit: BoxFit.contain),
               ),
               SizedBox(height: 8.ui),
-              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const Spacer(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1709,7 +1807,10 @@ class _HeroOffer extends StatelessWidget {
                   Expanded(
                     child: Text(
                       headline,
-                      style: const TextStyle(fontSize: 29, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 29,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -1882,7 +1983,10 @@ class _HomeHero extends StatelessWidget {
                 height: 42.ui * scale * HomeScale.factor,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 2),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    width: 2,
+                  ),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x22000000),
@@ -1958,7 +2062,10 @@ class _HomeHero extends StatelessWidget {
 }
 
 class _NotificationBellButton extends StatelessWidget {
-  const _NotificationBellButton({required this.onPressed, required this.iconSize});
+  const _NotificationBellButton({
+    required this.onPressed,
+    required this.iconSize,
+  });
 
   final VoidCallback onPressed;
   final double iconSize;
@@ -1977,7 +2084,8 @@ class _NotificationBellButton extends StatelessWidget {
               .collection('notifications')
               .where('readAt', isNull: true)
               .snapshots(),
-          builder: (context, snapshot) => _button(snapshot.data?.docs.length ?? 0),
+          builder: (context, snapshot) =>
+              _button(snapshot.data?.docs.length ?? 0),
         );
       },
     );
@@ -2127,114 +2235,116 @@ class _ProfileDrawer extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 16, 10),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Account',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4FBF7),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFDCEFE3)),
-                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 16, 10),
                 child: Row(
                   children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        ProfileAvatar(
-                          profile: profile,
-                          size: 56,
-                          fallbackBackgroundColor: const Color(0xFFD9EDE3),
-                          fallbackIconColor: Colors.white,
+                    const Expanded(
+                      child: Text(
+                        'Account',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
                         ),
-                        if (isLoadingProfile || profile == null)
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            profile?.displayName ?? 'Loading...',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              height: 1.1,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            'Profile, Settings & More',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
                       ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
                     ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            _DrawerAction(
-              icon: Icons.person_outline_rounded,
-              label: 'Edit Profile',
-              onTap: onEditProfile,
-            ),
-            _DrawerAction(
-              icon: Icons.receipt_long_outlined,
-              label: 'Transaction History',
-              onTap: onTransactionHistory,
-            ),
-            if (profile != null && isAdminEmail(profile!.email))
-              _DrawerAction(
-                icon: Icons.admin_panel_settings_outlined,
-                label: 'Admin Panel',
-                onTap: onAdminPanel,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4FBF7),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFDCEFE3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ProfileAvatar(
+                            profile: profile,
+                            size: 56,
+                            fallbackBackgroundColor: const Color(0xFFD9EDE3),
+                            fallbackIconColor: Colors.white,
+                          ),
+                          if (isLoadingProfile || profile == null)
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              profile?.displayName ?? 'Loading...',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                height: 1.1,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'Profile, Settings & More',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            _DrawerAction(
-              icon: Icons.settings_outlined,
-              label: 'Settings',
-              onTap: () {},
-            ),
-            _DrawerAction(
-              icon: Icons.help_outline_rounded,
-              label: 'Help & Support',
-              onTap: () {},
-            ),
+              const SizedBox(height: 18),
+              _DrawerAction(
+                icon: Icons.person_outline_rounded,
+                label: 'Edit Profile',
+                onTap: onEditProfile,
+              ),
+              _DrawerAction(
+                icon: Icons.receipt_long_outlined,
+                label: 'Transaction History',
+                onTap: onTransactionHistory,
+              ),
+              if (profile != null && isAdminEmail(profile!.email))
+                _DrawerAction(
+                  icon: Icons.admin_panel_settings_outlined,
+                  label: 'Admin Panel',
+                  onTap: onAdminPanel,
+                ),
+              _DrawerAction(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                onTap: () {},
+              ),
+              _DrawerAction(
+                icon: Icons.help_outline_rounded,
+                label: 'Help & Support',
+                onTap: () {},
+              ),
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -2349,14 +2459,22 @@ class _AccountCardState extends State<_AccountCard> {
               ),
             ],
           ),
-          padding: EdgeInsets.fromLTRB(16.ui * scale, 14.ui * scale, 16.ui * scale, 16.ui * scale),
+          padding: EdgeInsets.fromLTRB(
+            16.ui * scale,
+            14.ui * scale,
+            16.ui * scale,
+            16.ui * scale,
+          ),
           child: Column(
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 9.ui * scale, vertical: 6.ui * scale),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 9.ui * scale,
+                      vertical: 6.ui * scale,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(6.ui * scale),
@@ -2364,7 +2482,11 @@ class _AccountCardState extends State<_AccountCard> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 16),
+                        Icon(
+                          Icons.account_balance_wallet_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'easypaisa Account',
@@ -2428,7 +2550,9 @@ class _AccountCardState extends State<_AccountCard> {
                           children: [
                             Text(
                               isSignedIn
-                                  ? (_balanceVisible ? 'Rs. 24,590' : 'Rs. ******')
+                                  ? (_balanceVisible
+                                        ? 'Rs. 24,590'
+                                        : 'Rs. ******')
                                   : widget.maskedAccountText,
                               style: TextStyle(
                                 color: Colors.white,
@@ -2455,7 +2579,9 @@ class _AccountCardState extends State<_AccountCard> {
                         SizedBox(height: 3.ui * scale),
                         Text(
                           isSignedIn
-                              ? (_balanceVisible ? 'Tap to hide balance' : 'Tap to see balance')
+                              ? (_balanceVisible
+                                    ? 'Tap to hide balance'
+                                    : 'Tap to see balance')
                               : 'Sign in to your easypaisa account',
                           style: TextStyle(
                             color: Colors.white,
@@ -2474,11 +2600,16 @@ class _AccountCardState extends State<_AccountCard> {
                           onPressed: widget.onSignIn,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
-                            side: BorderSide(color: AppColors.brandGreen, width: 1.5.ui * scale),
+                            side: BorderSide(
+                              color: AppColors.brandGreen,
+                              width: 1.5.ui * scale,
+                            ),
                             minimumSize: Size.fromHeight(30.ui * scale),
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.ui * scale),
+                              borderRadius: BorderRadius.circular(
+                                16.ui * scale,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -2501,7 +2632,9 @@ class _AccountCardState extends State<_AccountCard> {
                             minimumSize: Size.fromHeight(30.ui * scale),
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.ui * scale),
+                              borderRadius: BorderRadius.circular(
+                                16.ui * scale,
+                              ),
                             ),
                           ),
                           child: Text(
@@ -3205,7 +3338,9 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
                       radius: 20,
-                      backgroundColor: AppColors.brandGreen.withValues(alpha: 0.12),
+                      backgroundColor: AppColors.brandGreen.withValues(
+                        alpha: 0.12,
+                      ),
                       child: Text(
                         initialsFor(favorite.recipientName),
                         style: const TextStyle(
@@ -3238,11 +3373,13 @@ class _BankTransferScreenState extends State<BankTransferScreen>
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(false),
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(false),
                                 child: const Text('Cancel'),
                               ),
                               TextButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(true),
+                                onPressed: () =>
+                                    Navigator.of(dialogContext).pop(true),
                                 child: const Text('Delete'),
                               ),
                             ],
@@ -3624,10 +3761,7 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  Widget _pinPadCell({
-    required Widget child,
-    required VoidCallback? onTap,
-  }) {
+  Widget _pinPadCell({required Widget child, required VoidCallback? onTap}) {
     return InkWell(
       onTap: onTap,
       child: Center(child: child),
@@ -3840,7 +3974,9 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _editEmail() async {
-    final emailController = TextEditingController(text: widget.rememberedEmail ?? _emailController.text);
+    final emailController = TextEditingController(
+      text: widget.rememberedEmail ?? _emailController.text,
+    );
     final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
@@ -3857,7 +3993,8 @@ class _AuthScreenState extends State<AuthScreen> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(emailController.text.trim()),
+              onPressed: () =>
+                  Navigator.of(dialogContext).pop(emailController.text.trim()),
               child: const Text('Save'),
             ),
           ],
@@ -3873,7 +4010,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rememberedEmail = widget.rememberedEmail ?? _emailController.text.trim();
+    final rememberedEmail =
+        widget.rememberedEmail ?? _emailController.text.trim();
     final showEmail = !_pinMode;
     return Material(
       color: Colors.transparent,
@@ -3919,7 +4057,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _pinMode ? 'ENTER YOUR 6 DIGIT PIN' : 'SIGN IN TO YOUR ACCOUNT',
+                            _pinMode
+                                ? 'ENTER YOUR 6 DIGIT PIN'
+                                : 'SIGN IN TO YOUR ACCOUNT',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 13,
@@ -3960,7 +4100,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                       labelText: 'Email',
                                       border: OutlineInputBorder(),
                                     ),
-                                    validator: (value) => (value == null || !value.contains('@') || !value.contains('.'))
+                                    validator: (value) =>
+                                        (value == null ||
+                                            !value.contains('@') ||
+                                            !value.contains('.'))
                                         ? 'Enter a valid email'
                                         : null,
                                   ),
@@ -3973,7 +4116,10 @@ class _AuthScreenState extends State<AuthScreen> {
                                       labelText: '6 digit password',
                                       border: const OutlineInputBorder(),
                                       suffixIcon: IconButton(
-                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                                        onPressed: () => setState(
+                                          () => _obscurePassword =
+                                              !_obscurePassword,
+                                        ),
                                         icon: Icon(
                                           _obscurePassword
                                               ? Icons.visibility_outlined
@@ -3983,7 +4129,8 @@ class _AuthScreenState extends State<AuthScreen> {
                                     ),
                                     validator: (value) {
                                       final text = value?.trim() ?? '';
-                                      if (text.length != 6 || int.tryParse(text) == null) {
+                                      if (text.length != 6 ||
+                                          int.tryParse(text) == null) {
                                         return 'Enter a 6 digit password';
                                       }
                                       return null;
@@ -4001,17 +4148,19 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: _isLoading
                                   ? null
                                   : _pinMode
-                                      ? (_pinController.text.length == 6
-                                          ? _submitPinFromPad
-                                          : null)
-                                      : _submitCredentials,
+                                  ? (_pinController.text.length == 6
+                                        ? _submitPinFromPad
+                                        : null)
+                                  : _submitCredentials,
                               style: FilledButton.styleFrom(
                                 backgroundColor: _pinMode
                                     ? (_pinController.text.length == 6
-                                        ? AppColors.brandGreen
-                                        : const Color(0xFFB9B9BF))
+                                          ? AppColors.brandGreen
+                                          : const Color(0xFFB9B9BF))
                                     : AppColors.brandGreen,
-                                disabledBackgroundColor: const Color(0xFFB9B9BF),
+                                disabledBackgroundColor: const Color(
+                                  0xFFB9B9BF,
+                                ),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(22),
@@ -4037,7 +4186,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   onPressed: _editEmail,
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppColors.textPrimary,
-                                    side: const BorderSide(color: Color(0xFF8BC9A7)),
+                                    side: const BorderSide(
+                                      color: Color(0xFF8BC9A7),
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(22),
                                     ),
@@ -4055,7 +4206,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                   style: OutlinedButton.styleFrom(
                                     padding: EdgeInsets.zero,
                                     foregroundColor: AppColors.brandGreen,
-                                    side: const BorderSide(color: Color(0xFF8BC9A7)),
+                                    side: const BorderSide(
+                                      color: Color(0xFF8BC9A7),
+                                    ),
                                     shape: const CircleBorder(),
                                   ),
                                   child: const Icon(Icons.fingerprint_rounded),
@@ -4078,7 +4231,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       right: 6,
                       child: IconButton(
                         onPressed: widget.onRequestClose,
-                        icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   ],
@@ -5599,23 +5755,21 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
       try {
         await TransactionNotificationService.instance
             .showLocalTransactionNotification(
-          notificationId: transactionDocument.id,
-          ownerName: ownerProfile.displayName,
-          amount: widget.amount,
-          receiverName: widget.recipientName,
-          receiverMaskedAccount: maskAccountNumber(widget.recipientAccount),
-          paymentRail: paymentRail,
-          ownerMaskedAccount: maskAccountNumber(ownerProfile.phoneNumber),
-          completedAt: completedAt,
-        );
+              notificationId: transactionDocument.id,
+              ownerName: ownerProfile.displayName,
+              amount: widget.amount,
+              receiverName: widget.recipientName,
+              receiverMaskedAccount: maskAccountNumber(widget.recipientAccount),
+              paymentRail: paymentRail,
+              ownerMaskedAccount: maskAccountNumber(ownerProfile.phoneNumber),
+              completedAt: completedAt,
+            );
       } catch (_) {
         // Local notification failure must not make a saved transfer look failed.
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Transaction saved to your history.'),
-        ),
+        const SnackBar(content: Text('Transaction saved to your history.')),
       );
     } catch (_) {
       if (!mounted) return;
@@ -5861,11 +6015,7 @@ class _SuccessBadge extends StatelessWidget {
         color: AppColors.brandGreen,
         shape: BoxShape.circle,
       ),
-      child: const Icon(
-        Icons.check_rounded,
-        color: Colors.white,
-        size: 54,
-      ),
+      child: const Icon(Icons.check_rounded, color: Colors.white, size: 54),
     );
   }
 }
@@ -5952,7 +6102,8 @@ Future<void> showReceiptScreen(
   required String recipientAccount,
 }) async {
   final receiptDateTime = _formatReceiptDateTime(DateTime.now());
-  const receiptBackground = ui.Color.fromARGB(255, 245, 245, 245);
+  const receiptBackground = ui.Color.fromARGB(255, 255, 255, 255);
+  const receiptOuterBackground = ui.Color.fromARGB(255, 185, 229, 209);
   final profile = await resolveUserProfile();
   if (!context.mounted) return;
   final receiptKey = GlobalKey();
@@ -6006,205 +6157,245 @@ Future<void> showReceiptScreen(
       fullscreenDialog: true,
       builder: (pageContext) => StatefulBuilder(
         builder: (pageContext, setState) => Scaffold(
-          backgroundColor: receiptBackground,
+          backgroundColor: receiptOuterBackground,
           body: SafeArea(
-            child: RepaintBoundary(
-              key: receiptKey,
-              child: SizedBox.expand(
-                child: Column(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          color: receiptBackground,
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(13, 14, 13, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Image.asset(
-                                    AppAssets.transactionReceiptSuccess,
-                                    width: 82,
-                                    height: 82,
-                                    fit: BoxFit.contain,
-                                  ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+              child: RepaintBoundary(
+                key: receiptKey,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          ui.Color.fromARGB(255, 225, 244, 234),
+                          receiptBackground,
+                        ],
+                        stops: [0, 0.42],
+                      ),
+                    ),
+                    child: SizedBox.expand(
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  14,
+                                  20,
+                                  20,
                                 ),
-                                const SizedBox(height: 6),
-                                const Center(
-                                  child: Text(
-                                    'Transaction Successful',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                const Center(
-                                  child: Text(
-                                    'Money has been sent',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                const Divider(height: 1),
-                                const SizedBox(height: 10),
-                                _ReceiptInfoRow(
-                                  label: 'Transaction ID',
-                                  value: '#515320532390',
-                                ),
-                                _ReceiptInfoRow(
-                                  label: 'Date & Time',
-                                  value: receiptDateTime,
-                                ),
-                                const _ReceiptInfoRow(
-                                  label: 'Funding Source',
-                                  value: 'easypaisa Account',
-                                ),
-                                const Divider(height: 24),
-                                const _ReceiptSectionTitle('Sent to'),
-                                _ReceiptInfoRow(label: 'Name', value: recipientName),
-                                _ReceiptInfoRow(
-                                  label: 'Raast IBAN',
-                                  value: recipientAccount
-                                          .trim()
-                                          .toUpperCase()
-                                          .startsWith('PK')
-                                      ? maskAccountNumber(recipientAccount)
-                                      : bankName ?? 'Not available',
-                                ),
-                                _ReceiptInfoRow(
-                                  label: 'Account Number',
-                                  value: recipientAccount,
-                                ),
-                                const Divider(height: 24),
-                                const _ReceiptSectionTitle('Sent by'),
-                                _ReceiptInfoRow(
-                                  label: 'Name',
-                                  value: profile.displayName,
-                                ),
-                                _ReceiptInfoRow(
-                                  label: 'Account Number',
-                                  value: profile.phoneNumber,
-                                ),
-                                const Divider(height: 24),
-                                const _ReceiptSectionTitle('Charges'),
-                                _ReceiptInfoRow(
-                                  label: 'Amount',
-                                  value: 'Rs. ${amount.toStringAsFixed(2)}',
-                                ),
-                                const _ReceiptInfoRow(
-                                  label: 'Fee',
-                                  value: 'Rs. 0.00',
-                                ),
-                                const Divider(height: 24),
-                                _ReceiptInfoRow(
-                                  label: 'Total Amount',
-                                  value: 'Rs. ${amount.toStringAsFixed(2)}',
-                                  isEmphasized: true,
-                                ),
-                                const SizedBox(height: 17),
-                                const Center(
-                                  child: Text.rich(
-                                    TextSpan(
-                                      text: 'Paid via  ',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: AppColors.textSecondary,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Center(
+                                      child: Image.asset(
+                                        AppAssets.transactionReceiptSuccess,
+                                        width: 82,
+                                        height: 82,
+                                        fit: BoxFit.contain,
                                       ),
-                                      children: [
-                                        TextSpan(
-                                          text: 'easypaisa',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                        ),
-                                      ],
                                     ),
+                                    const SizedBox(height: 6),
+                                    const Center(
+                                      child: Text(
+                                        'Transaction Successful',
+                                        style: TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    const Center(
+                                      child: Text(
+                                        'Money has been sent',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    const Divider(height: 1),
+                                    const SizedBox(height: 10),
+                                    _ReceiptInfoRow(
+                                      label: 'Transaction ID',
+                                      value: '#515320532390',
+                                    ),
+                                    _ReceiptInfoRow(
+                                      label: 'Date & Time',
+                                      value: receiptDateTime,
+                                    ),
+                                    const _ReceiptInfoRow(
+                                      label: 'Funding Source',
+                                      value: 'easypaisa Account',
+                                    ),
+                                    const Divider(height: 24),
+                                    const _ReceiptSectionTitle('Sent to'),
+                                    _ReceiptInfoRow(
+                                      label: 'Name',
+                                      value: recipientName,
+                                    ),
+                                    _ReceiptInfoRow(
+                                      label: 'Raast IBAN',
+                                      value:
+                                          recipientAccount
+                                              .trim()
+                                              .toUpperCase()
+                                              .startsWith('PK')
+                                          ? maskAccountNumber(recipientAccount)
+                                          : bankName ?? 'Not available',
+                                    ),
+                                    _ReceiptInfoRow(
+                                      label: 'Account Number',
+                                      value: recipientAccount,
+                                    ),
+                                    const Divider(height: 24),
+                                    const _ReceiptSectionTitle('Sent by'),
+                                    _ReceiptInfoRow(
+                                      label: 'Name',
+                                      value: profile.displayName,
+                                    ),
+                                    _ReceiptInfoRow(
+                                      label: 'Account Number',
+                                      value: profile.phoneNumber,
+                                    ),
+                                    const Divider(height: 24),
+                                    const _ReceiptSectionTitle('Charges'),
+                                    _ReceiptInfoRow(
+                                      label: 'Amount',
+                                      value: 'Rs. ${amount.toStringAsFixed(2)}',
+                                    ),
+                                    const _ReceiptInfoRow(
+                                      label: 'Fee',
+                                      value: 'Rs. 0.00',
+                                    ),
+                                    const Divider(height: 24),
+                                    _ReceiptInfoRow(
+                                      label: 'Total Amount',
+                                      value: 'Rs. ${amount.toStringAsFixed(2)}',
+                                      isEmphasized: true,
+                                    ),
+                                    const SizedBox(height: 17),
+                                    const Center(
+                                      child: Text.rich(
+                                        TextSpan(
+                                          text: 'Paid via  ',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: 'easypaisa',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                                color: AppColors.textPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.of(
+                                      pageContext,
+                                    ).popUntil((route) => route.isFirst),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 38),
+                                      side: const BorderSide(
+                                        color: AppColors.brandGreen,
+                                        width: 1.3,
+                                      ),
+                                      shape: const StadiumBorder(),
+                                    ),
+                                    child: const Text(
+                                      'Back to Home',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                _ReceiptRoundAction(
+                                  icon: Icons.share_outlined,
+                                  busy: isProcessing,
+                                  onTap: () => runReceiptAction(
+                                    () => setState(() {}),
+                                    (bytes) async {
+                                      final result = await Share.shareXFiles(
+                                        [
+                                          XFile.fromData(
+                                            bytes,
+                                            mimeType: 'image/png',
+                                          ),
+                                        ],
+                                        subject:
+                                            'easypaisa Transaction Receipt',
+                                        fileNameOverrides: const [
+                                          'easypaisa_transaction_receipt.png',
+                                        ],
+                                      );
+                                      if (result.status ==
+                                          ShareResultStatus.success) {
+                                        showResultMessage(
+                                          'Receipt shared successfully.',
+                                        );
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                _ReceiptRoundAction(
+                                  icon: Icons.download_outlined,
+                                  busy: isProcessing,
+                                  onTap: () => runReceiptAction(
+                                    () => setState(() {}),
+                                    (bytes) async {
+                                      var hasAccess = await Gal.hasAccess();
+                                      if (!hasAccess)
+                                        hasAccess = await Gal.requestAccess();
+                                      if (!hasAccess) {
+                                        throw StateError(
+                                          'Gallery permission was denied.',
+                                        );
+                                      }
+                                      await Gal.putImageBytes(
+                                        bytes,
+                                        name: 'easypaisa_transaction_receipt',
+                                      );
+                                      showResultMessage(
+                                        'Receipt saved to Photos.',
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      Container(
-                        color: receiptBackground,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () => Navigator.of(
-                                  pageContext,
-                                ).popUntil((route) => route.isFirst),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 38),
-                                  side: const BorderSide(
-                                    color: AppColors.brandGreen,
-                                    width: 1.3,
-                                  ),
-                                  shape: const StadiumBorder(),
-                                ),
-                                child: const Text(
-                                  'Back to Home',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            _ReceiptRoundAction(
-                              icon: Icons.share_outlined,
-                              busy: isProcessing,
-                              onTap: () => runReceiptAction(
-                                () => setState(() {}),
-                                (bytes) async {
-                                  final result = await Share.shareXFiles(
-                                    [XFile.fromData(bytes, mimeType: 'image/png')],
-                                    subject: 'easypaisa Transaction Receipt',
-                                    fileNameOverrides: const [
-                                      'easypaisa_transaction_receipt.png',
-                                    ],
-                                  );
-                                  if (result.status == ShareResultStatus.success) {
-                                    showResultMessage('Receipt shared successfully.');
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            _ReceiptRoundAction(
-                              icon: Icons.download_outlined,
-                              busy: isProcessing,
-                              onTap: () => runReceiptAction(
-                                () => setState(() {}),
-                                (bytes) async {
-                                  var hasAccess = await Gal.hasAccess();
-                                  if (!hasAccess) hasAccess = await Gal.requestAccess();
-                                  if (!hasAccess) {
-                                    throw StateError('Gallery permission was denied.');
-                                  }
-                                  await Gal.putImageBytes(
-                                    bytes,
-                                    name: 'easypaisa_transaction_receipt',
-                                  );
-                                  showResultMessage('Receipt saved to Photos.');
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -6269,11 +6460,7 @@ class _ReceiptInfoRow extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: style,
-            ),
+            child: Text(value, textAlign: TextAlign.right, style: style),
           ),
         ],
       ),
@@ -6355,10 +6542,7 @@ class _MyAccountScreenState extends State<MyAccountScreen>
       body: SafeArea(
         child: Column(
           children: [
-            SimpleAppBar(
-              title: 'My Account',
-              onBack: widget.onBackToHome,
-            ),
+            SimpleAppBar(title: 'My Account', onBack: widget.onBackToHome),
             _AccountHeaderCard(controller: _tabController),
             Expanded(
               child: TabBarView(
@@ -6387,17 +6571,15 @@ class _MyAccountScreenState extends State<MyAccountScreen>
 }
 
 class _EditProfileDialog extends StatefulWidget {
-  const _EditProfileDialog({
-    required this.profile,
-    required this.onSave,
-  });
+  const _EditProfileDialog({required this.profile, required this.onSave});
 
   final UserProfileData profile;
   final Future<void> Function(
     String displayName,
     String phoneNumber,
     String? photoBase64,
-  ) onSave;
+  )
+  onSave;
 
   @override
   State<_EditProfileDialog> createState() => _EditProfileDialogState();
@@ -6416,7 +6598,9 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.profile.displayName);
     _phoneController = TextEditingController(
-      text: widget.profile.phoneNumber == 'Not set' ? '' : widget.profile.phoneNumber,
+      text: widget.profile.phoneNumber == 'Not set'
+          ? ''
+          : widget.profile.phoneNumber,
     );
     _photoBase64 = widget.profile.photoBase64;
   }
@@ -6447,17 +6631,21 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await widget.onSave(_nameController.text, _phoneController.text, _photoBase64);
+      await widget.onSave(
+        _nameController.text,
+        _phoneController.text,
+        _photoBase64,
+      );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile updated')));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to save profile')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Unable to save profile')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -6503,43 +6691,60 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                           height: 74,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFFDCEFE3), width: 2),
+                            border: Border.all(
+                              color: const Color(0xFFDCEFE3),
+                              width: 2,
+                            ),
                           ),
                           child: ClipOval(
                             child: _photoBase64 == null
                                 ? Image.asset(
                                     AppAssets.profileAvatar,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      color: const Color(0xFFF4FBF7),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        initialsFor(_nameController.text.isEmpty
-                                            ? widget.profile.displayName
-                                            : _nameController.text),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                                    errorBuilder:
+                                        (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) => Container(
+                                          color: const Color(0xFFF4FBF7),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            initialsFor(
+                                              _nameController.text.isEmpty
+                                                  ? widget.profile.displayName
+                                                  : _nameController.text,
+                                            ),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
                                   )
                                 : Image.memory(
                                     base64Decode(_photoBase64!),
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      color: const Color(0xFFF4FBF7),
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        initialsFor(_nameController.text.isEmpty
-                                            ? widget.profile.displayName
-                                            : _nameController.text),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: AppColors.textPrimary,
+                                    errorBuilder:
+                                        (
+                                          context,
+                                          error,
+                                          stackTrace,
+                                        ) => Container(
+                                          color: const Color(0xFFF4FBF7),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            initialsFor(
+                                              _nameController.text.isEmpty
+                                                  ? widget.profile.displayName
+                                                  : _nameController.text,
+                                            ),
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
                                   ),
                           ),
                         ),
@@ -6656,7 +6861,8 @@ class _LiveTransactionHistoryTab extends StatelessWidget {
               SizedBox(height: 20),
               _EmptyHistoryState(
                 title: 'Sign in to view history',
-                subtitle: 'Each account has its own Firestore history after sign-in.',
+                subtitle:
+                    'Each account has its own Firestore history after sign-in.',
               ),
             ],
           );
@@ -6683,7 +6889,10 @@ class _LiveTransactionHistoryTab extends StatelessWidget {
                   child: Text(
                     'Unable to load transaction history.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               );
@@ -6751,7 +6960,6 @@ class _LiveTransactionHistoryTab extends StatelessWidget {
       },
     );
   }
-
 }
 
 String _shortMonth(int month) {
@@ -6773,10 +6981,7 @@ String _shortMonth(int month) {
 }
 
 class _SyncRow extends StatelessWidget {
-  const _SyncRow({
-    required this.dateLabel,
-    required this.lastSyncLabel,
-  });
+  const _SyncRow({required this.dateLabel, required this.lastSyncLabel});
 
   final String dateLabel;
   final String lastSyncLabel;
@@ -6903,8 +7108,7 @@ class TransactionCard extends StatelessWidget {
 class _EmptyHistoryState extends StatelessWidget {
   const _EmptyHistoryState({
     this.title = 'No transactions yet',
-    this.subtitle =
-        'Completed transfers will appear here automatically.',
+    this.subtitle = 'Completed transfers will appear here automatically.',
   });
 
   final String title;
@@ -6935,7 +7139,10 @@ class _EmptyHistoryState extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -7003,10 +7210,7 @@ class _AccountHeaderCard extends StatelessWidget {
         unselectedLabelColor: const Color(0xFFB4B4B8),
         indicatorColor: AppColors.brandGreen,
         indicatorWeight: 4,
-        labelStyle: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-        ),
+        labelStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
@@ -7097,7 +7301,10 @@ class _SummaryProfileCard extends StatelessWidget {
                   SizedBox(width: 6),
                   Text(
                     'Edit',
-                    style: TextStyle(fontSize: 15, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -7150,7 +7357,10 @@ class _QuickAccountCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   profile.phoneNumber,
-                  style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -7487,8 +7697,8 @@ class DeviceSessionData {
       deviceName: (data['deviceName'] as String?)?.trim().isNotEmpty == true
           ? (data['deviceName'] as String).trim()
           : (data['deviceLabel'] as String?)?.trim().isNotEmpty == true
-              ? (data['deviceLabel'] as String).trim()
-              : 'Device',
+          ? (data['deviceLabel'] as String).trim()
+          : 'Device',
       platform: (data['platform'] as String?)?.trim() ?? 'unknown',
       email: (data['email'] as String?)?.trim() ?? '',
       displayName: (data['displayName'] as String?)?.trim() ?? '',
@@ -7593,7 +7803,9 @@ class AdminPanelScreen extends StatelessWidget {
                           ),
                         ),
                         Chip(
-                          label: Text(session.isActive ? 'Active' : 'Signed out'),
+                          label: Text(
+                            session.isActive ? 'Active' : 'Signed out',
+                          ),
                           backgroundColor: session.isActive
                               ? const Color(0xFFE3F8EC)
                               : const Color(0xFFF2F2F4),
@@ -7603,7 +7815,9 @@ class AdminPanelScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text('Email: ${session.email}'),
                     Text('Device ID: ${session.deviceId}'),
-                    Text('Account ID: ${session.accountId.isEmpty ? "-" : session.accountId}'),
+                    Text(
+                      'Account ID: ${session.accountId.isEmpty ? "-" : session.accountId}',
+                    ),
                     Text('Platform: ${session.platform}'),
                     Text('Last seen: $lastSeen'),
                     if (session.logoutRequested)
