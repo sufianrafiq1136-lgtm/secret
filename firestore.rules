@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(resourceData) {
+      return signedIn() && resourceData.ownerUid == request.auth.uid;
+    }
+
+    // Existing account data remains accessible to signed-in users. New transaction
+    // and notification documents use ownerUid for account-level isolation.
+    match /users/{accountId}/transactions/{transactionId} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if isOwner(resource.data);
+      allow update, delete: if false;
+    }
+
+    match /users/{accountId}/notifications/{notificationId} {
+      allow read: if isOwner(resource.data);
+      allow update: if isOwner(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
+      allow create, delete: if false;
+    }
+
+    match /users/{accountId}/devices/{deviceId} {
+      allow read: if isOwner(resource.data);
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isOwner(resource.data)
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if isOwner(resource.data);
+    }
+
+    match /users/{accountId}/profile/{document=**} {
+      allow read, write: if signedIn();
+    }
+
+    match /users/{accountId}/favorites/{document=**} {
+      allow read, write: if signedIn();
+    }
+
+    match /_email_account_ids/{document} {
+      allow read, write: if signedIn();
+    }
+
+    match /device_sessions/{document} {
+      allow read, write: if signedIn();
+    }
+  }
+}

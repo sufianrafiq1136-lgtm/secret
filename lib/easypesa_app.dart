@@ -1,4 +1,4 @@
-import 'dart:async';
+ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -17,6 +17,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
+import 'transaction_notifications.dart';
 import 'user_profile.dart';
 
 class AppColors {
@@ -107,6 +108,8 @@ class AppAssets {
   static const sadapay = 'assets/logos/sadapay.webp';
   static const nayapay = 'assets/logos/nayapay.jpg';
   static const raastId = 'assets/logos/raast id.png';
+  static const transactionReceiptSuccess =
+      'assets/animation sample/transection receipt.jpeg';
 }
 
 class ProfileAvatar extends StatelessWidget {
@@ -284,6 +287,20 @@ class FavoriteRecipientsStore {
     }, SetOptions(merge: true));
   }
 
+  static Future<void> remove(FavoriteRecipient recipient) async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = await load();
+    final next = current.where((item) => item.id != recipient.id).toList();
+    await prefs.setString(
+      _prefsKey,
+      jsonEncode(next.map((item) => item.toJson()).toList()),
+    );
+
+    final favoritesCollection = await accountCollection('favorites');
+    if (favoritesCollection == null) return;
+    await favoritesCollection.doc(recipient.id).delete();
+  }
+
   static Future<bool> contains({
     required String bankName,
     required String accountNumber,
@@ -424,6 +441,7 @@ class EasyPesaApp extends StatelessWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: MaterialApp(
+        navigatorKey: appNavigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'EasyPesa',
         builder: (context, child) {
@@ -475,6 +493,8 @@ class EasyPesaApp extends StatelessWidget {
   }
 }
 
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -493,6 +513,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   String? _rememberedEmail;
   Timer? _lockTimer;
   Timer? _deviceSessionTimer;
+  StreamSubscription<String>? _notificationOpenSubscription;
   DateTime? _lastUnlockAt;
   bool _isAdmin = false;
 
@@ -504,6 +525,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _notificationOpenSubscription = TransactionNotificationService.instance
+        .notificationOpens
+        .listen((notificationId) => _openNotificationInbox(notificationId: notificationId));
     _restoreAuthState();
   }
 
@@ -512,6 +536,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _lockTimer?.cancel();
     _deviceSessionTimer?.cancel();
+    _notificationOpenSubscription?.cancel();
     super.dispose();
   }
 
@@ -574,6 +599,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         data == null || data['logoutRequested'] == true || data['isActive'] == false;
     if (!shouldForceLogout) return;
     if (!mounted) return;
+    await TransactionNotificationService.instance.deactivateCurrentDevice();
     await FirebaseAuth.instance.signOut();
     _lock();
   }
@@ -603,6 +629,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
       if (currentUser != null) {
         recordDeviceSession(user: currentUser, accountId: accountId);
+        unawaited(
+          TransactionNotificationService.instance.requestPermissionAndRegisterDevice(),
+        );
+      }
+      final pendingNotificationId =
+          TransactionNotificationService.instance.pendingNotificationId;
+      if (pendingNotificationId != null) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _openNotificationInbox(notificationId: pendingNotificationId),
+        );
       }
     });
     _scheduleAutoLock();
@@ -614,6 +650,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
     if (currentUser != null) {
       clearDeviceSession(user: currentUser);
+      unawaited(TransactionNotificationService.instance.deactivateCurrentDevice());
     }
     _deviceSessionTimer?.cancel();
     if (!mounted) return;
@@ -852,6 +889,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             maskedAccountText: '*******1267',
             onSignIn: _openAuthScreen,
             onSendMoney: _openSendMoneyFlow,
+            onNotifications: _openNotificationInbox,
             onOpenPlaceholder: _openPlaceholder,
             onOpenMyAccount: () => setState(() => _pageIndex = 3),
             onOpenProfileDrawer: _openProfileDrawer,
@@ -897,6 +935,24 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         MaterialPageRoute<void>(builder: (_) => ComingSoonScreen(title: title)),
       );
     });
+  }
+
+  void _openNotificationInbox({String? notificationId}) {
+    final currentUser = Firebase.apps.isNotEmpty ? FirebaseAuth.instance.currentUser : null;
+    if (!_isUnlocked || currentUser == null) {
+      _openAuthScreen();
+      return;
+    }
+    final navigator = appNavigatorKey.currentState;
+    if (navigator == null) return;
+    if (notificationId != null) {
+      TransactionNotificationService.instance.consumePendingNotification(notificationId);
+    }
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => NotificationInboxScreen(initialNotificationId: notificationId),
+      ),
+    );
   }
 
   Future<void> _openAuthScreen() async {
@@ -1286,6 +1342,7 @@ class HomeScreen extends StatelessWidget {
     required this.maskedAccountText,
     required this.onSignIn,
     required this.onSendMoney,
+    required this.onNotifications,
     required this.onOpenPlaceholder,
     required this.onOpenMyAccount,
     required this.onOpenProfileDrawer,
@@ -1299,6 +1356,7 @@ class HomeScreen extends StatelessWidget {
   final String maskedAccountText;
   final VoidCallback onSignIn;
   final VoidCallback onSendMoney;
+  final VoidCallback onNotifications;
   final ValueChanged<String> onOpenPlaceholder;
   final VoidCallback onOpenMyAccount;
   final VoidCallback onOpenProfileDrawer;
@@ -1326,7 +1384,7 @@ class HomeScreen extends StatelessWidget {
               profile: profile,
               maskedAccountText: maskedAccountText,
               onSearch: () => onOpenPlaceholder('Search'),
-              onNotifications: () => onOpenPlaceholder('Notifications'),
+              onNotifications: onNotifications,
               onLogout: onLogout,
               onSignIn: onSignIn,
               onProfileTap: onOpenProfileDrawer,
@@ -1479,12 +1537,9 @@ class _HomeRefreshHeaderState extends State<_HomeRefreshHeader> {
                     ),
                   ),
                 ),
-                IconButton(
+                _NotificationBellButton(
                   onPressed: widget.onNotifications,
-                  icon: const Icon(Icons.notifications_none_rounded),
-                  color: AppColors.textPrimary,
                   iconSize: 29.ui,
-                  tooltip: 'Notifications',
                 ),
                 if (widget.isSignedIn)
                   IconButton(
@@ -1879,13 +1934,9 @@ class _HomeHero extends StatelessWidget {
           Positioned(
             top: 20.ui,
             right: 52.ui,
-            child: IconButton(
+            child: _NotificationBellButton(
               onPressed: onNotifications,
-              icon: Icon(
-                Icons.notifications_none_rounded,
-                color: AppColors.textPrimary,
-                size: 27.3.ui * scale * HomeScale.factor,
-              ),
+              iconSize: 27.3.ui * scale * HomeScale.factor,
             ),
           ),
           Positioned(
@@ -1902,6 +1953,72 @@ class _HomeHero extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationBellButton extends StatelessWidget {
+  const _NotificationBellButton({required this.onPressed, required this.iconSize});
+
+  final VoidCallback onPressed;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: activeAccountId(),
+      builder: (context, accountSnapshot) {
+        final accountId = accountSnapshot.data;
+        if (accountId == null) return _button(0);
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(accountId)
+              .collection('notifications')
+              .where('readAt', isNull: true)
+              .snapshots(),
+          builder: (context, snapshot) => _button(snapshot.data?.docs.length ?? 0),
+        );
+      },
+    );
+  }
+
+  Widget _button(int unreadCount) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          onPressed: onPressed,
+          icon: Icon(
+            Icons.notifications_none_rounded,
+            color: AppColors.textPrimary,
+            size: iconSize,
+          ),
+          tooltip: 'Notifications',
+        ),
+        if (unreadCount > 0)
+          Positioned(
+            top: 7,
+            right: 7,
+            child: Container(
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: AppColors.danger,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                unreadCount > 9 ? '9+' : '$unreadCount',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -3054,6 +3171,16 @@ class _BankTransferScreenState extends State<BankTransferScreen>
     }).then((_) => _loadFavorites());
   }
 
+  Future<void> _deleteFavoriteRecipient(FavoriteRecipient favorite) async {
+    await FavoriteRecipientsStore.remove(favorite);
+    if (!mounted) return;
+    setState(() {
+      _favoriteRecipients = _favoriteRecipients
+          .where((item) => item.id != favorite.id)
+          .toList();
+    });
+  }
+
   void _showAllFavorites() {
     if (_favoriteRecipients.isEmpty) return;
     showModalBottomSheet<void>(
@@ -3063,41 +3190,84 @@ class _BankTransferScreenState extends State<BankTransferScreen>
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
       builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
-            itemCount: _favoriteRecipients.length,
-            separatorBuilder: (_, _) =>
-                const Divider(height: 1, color: Color(0xFFEDEDF1)),
-            itemBuilder: (context, index) {
-              final favorite = _favoriteRecipients[index];
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.brandGreen.withValues(alpha: 0.12),
-                  child: Text(
-                    initialsFor(favorite.recipientName),
-                    style: const TextStyle(
-                      color: AppColors.brandGreenDark,
-                      fontWeight: FontWeight.w700,
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              top: false,
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
+                itemCount: _favoriteRecipients.length,
+                separatorBuilder: (_, _) =>
+                    const Divider(height: 1, color: Color(0xFFEDEDF1)),
+                itemBuilder: (context, index) {
+                  final favorite = _favoriteRecipients[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: AppColors.brandGreen.withValues(alpha: 0.12),
+                      child: Text(
+                        initialsFor(favorite.recipientName),
+                        style: const TextStyle(
+                          color: AppColors.brandGreenDark,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                title: Text(
-                  favorite.recipientName,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text('${favorite.bankName} * ${favorite.accountNumber}'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _openFavoriteRecipient(favorite);
+                    title: Text(
+                      favorite.recipientName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      '${favorite.bankName} * ${favorite.accountNumber}',
+                    ),
+                    trailing: TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFBE3A3A),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      label: const Text('Delete'),
+                      onPressed: () async {
+                        final shouldDelete = await showDialog<bool>(
+                          context: context,
+                          builder: (dialogContext) => AlertDialog(
+                            title: const Text('Delete favourite?'),
+                            content: Text(
+                              'Remove ${favorite.recipientName} from your favourites?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(true),
+                                child: const Text('Delete'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (shouldDelete != true) return;
+
+                        await _deleteFavoriteRecipient(favorite);
+                        if (!sheetContext.mounted) return;
+                        if (_favoriteRecipients.isEmpty) {
+                          Navigator.of(sheetContext).pop();
+                          return;
+                        }
+                        setSheetState(() {});
+                      },
+                    ),
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _openFavoriteRecipient(favorite);
+                    },
+                  );
                 },
-              );
-            },
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -5391,21 +5561,62 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
     try {
       final transactionsCollection = await accountCollection('transactions');
       if (transactionsCollection == null) return;
-      await transactionsCollection.add({
-        'title': 'Money Transfer via Raast - ${widget.recipientName}',
+      final completedAt = DateTime.now();
+      UserProfileData ownerProfile;
+      try {
+        ownerProfile = await resolveUserProfile();
+      } catch (_) {
+        ownerProfile = UserProfileData.fallback(
+          FirebaseAuth.instance.currentUser,
+          await activeAccountId(),
+        );
+      }
+      final paymentRail = paymentRailForBankName(widget.bankName);
+      final transactionDocument = transactionsCollection.doc();
+      await transactionDocument.set({
+        'title': 'Money Transfer via $paymentRail - ${widget.recipientName}',
         'amount': widget.amount,
         'recipientName': widget.recipientName,
         'recipientAccount': widget.recipientAccount,
+        'recipientMaskedAccount': maskAccountNumber(widget.recipientAccount),
         'bankName': widget.bankName,
+        'paymentRail': paymentRail,
+        'ownerName': ownerProfile.displayName,
+        'ownerMaskedAccount': maskAccountNumber(ownerProfile.phoneNumber),
+        'ownerUid': FirebaseAuth.instance.currentUser?.uid,
+        'ownerEmail': FirebaseAuth.instance.currentUser?.email,
         'iban': 'PK41JCMA0604923191981267',
         'fee': 0,
         'status': 'success',
         'type': 'debit',
         'timestamp': FieldValue.serverTimestamp(),
-        'clientTimestamp': Timestamp.fromDate(DateTime.now()),
+        'clientTimestamp': Timestamp.fromDate(completedAt),
+        'completedAt': Timestamp.fromDate(completedAt),
+        'completedAtDisplay': formatTransactionNotificationDate(completedAt),
         'receiptId': 'ID#515320532390',
         'savedForEmail': FirebaseAuth.instance.currentUser?.email,
       });
+      try {
+        await TransactionNotificationService.instance
+            .showLocalTransactionNotification(
+          notificationId: transactionDocument.id,
+          ownerName: ownerProfile.displayName,
+          amount: widget.amount,
+          receiverName: widget.recipientName,
+          receiverMaskedAccount: maskAccountNumber(widget.recipientAccount),
+          paymentRail: paymentRail,
+          ownerMaskedAccount: maskAccountNumber(ownerProfile.phoneNumber),
+          completedAt: completedAt,
+        );
+      } catch (_) {
+        // Local notification failure must not make a saved transfer look failed.
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Transaction saved to your history.'),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -5606,7 +5817,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                   _SuccessActionRow(
                     icon: Icons.receipt_long_outlined,
                     label: 'View Receipt',
-                    onTap: () => showReceiptDialog(
+                    onTap: () => showReceiptScreen(
                       context,
                       amount: widget.amount,
                       bankName: widget.bankName,
@@ -5617,7 +5828,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
                   _SuccessActionRow(
                     icon: Icons.share_outlined,
                     label: 'Share',
-                    onTap: () => showReceiptDialog(
+                    onTap: () => showReceiptScreen(
                       context,
                       amount: widget.amount,
                       bankName: widget.bankName,
@@ -5733,40 +5944,7 @@ String _formatReceiptDateTime(DateTime dateTime) {
       '${hour.toString().padLeft(2, '0')}:$minute $period';
 }
 
-class _TornReceiptClipper extends CustomClipper<Path> {
-  const _TornReceiptClipper();
-
-  static const double tearDepth = 2;
-  static const double toothWidth = 3;
-
-  @override
-  Path getClip(Size size) {
-    final path = Path()..moveTo(0, tearDepth);
-
-    var index = 0;
-    for (double x = 0; x <= size.width; x += toothWidth) {
-      path.lineTo(x, index.isEven ? 0 : tearDepth);
-      index++;
-    }
-
-    path.lineTo(size.width, size.height - tearDepth);
-
-    index = 0;
-    for (double x = size.width; x >= 0; x -= toothWidth) {
-      path.lineTo(x, index.isEven ? size.height : size.height - tearDepth);
-      index++;
-    }
-
-    path.lineTo(0, tearDepth);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant _TornReceiptClipper oldClipper) => false;
-}
-
-Future<void> showReceiptDialog(
+Future<void> showReceiptScreen(
   BuildContext context, {
   required double amount,
   String? bankName,
@@ -5774,7 +5952,9 @@ Future<void> showReceiptDialog(
   required String recipientAccount,
 }) async {
   final receiptDateTime = _formatReceiptDateTime(DateTime.now());
+  const receiptBackground = ui.Color.fromARGB(255, 245, 245, 245);
   final profile = await resolveUserProfile();
+  if (!context.mounted) return;
   final receiptKey = GlobalKey();
   var isProcessing = false;
 
@@ -5821,324 +6001,316 @@ Future<void> showReceiptDialog(
     }
   }
 
-  return showGeneralDialog<void>(
-    context: context,
-    barrierDismissible: true,
-    barrierLabel: 'Transaction Successful',
-    barrierColor: Colors.black45,
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      return StatefulBuilder(
-        builder: (dialogContext, setState) => Center(
-          child: Material(
-            color: Colors.transparent,
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (pageContext) => StatefulBuilder(
+        builder: (pageContext, setState) => Scaffold(
+          backgroundColor: receiptBackground,
+          body: SafeArea(
             child: RepaintBoundary(
               key: receiptKey,
-              child: ClipPath(
-                clipper: const _TornReceiptClipper(),
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.92,
-                  height: MediaQuery.of(context).size.height * 0.88,
-                  color: Colors.white,
-                  child: Stack(
+              child: SizedBox.expand(
+                child: Column(
                     children: [
-                      SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(28, 36, 28, 22),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 18),
-                            const Center(
-                              child: Icon(
-                                Icons.check_circle,
-                                size: 52,
-                                color: AppColors.brandGreen,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            const Center(
-                              child: SizedBox(
-                                width: 150,
-                                height: 40,
-                                child: Image(
-                                  image: AssetImage(AppAssets.easypaisaJpg),
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            const Center(
-                              child: Text(
-                                'Transaction Successful',
-                                style: TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.brandGreen,
-                                ),
-                              ),
-                            ),
-                            const Center(
-                              child: Text(
-                                'Money has been sent.',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Color(0xFF9A9A9A),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 36),
-                            Text(
-                              receiptDateTime,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                color: Color(0xFF9A9A9A),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'ID#515320532390',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF9A9A9A),
-                              ),
-                            ),
-                            const SizedBox(height: 26),
-                            const Text(
-                              'Sent to',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              recipientName,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              recipientAccount,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              bankName ?? 'Bank transfer',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 26),
-                            const Text(
-                              'Sent By',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              profile.displayName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              profile.phoneNumber,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 26),
-                            const Text(
-                              'Amount',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              amount.toStringAsFixed(2),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                color: Color(0xFF7D7D7D),
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            const Text(
-                              'Fee / Charge',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF8E8E8E),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 26,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF66C2FF),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: const Text(
-                                'Free',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 22),
-                            const Text(
-                              'Total Amount',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.brandGreen,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              'Rs. ${amount.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w500,
-                                color: Color.fromARGB(255, 67, 65, 73),
-                              ),
-                            ),
-                            const SizedBox(height: 28),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      Expanded(
+                        child: Container(
+                          color: receiptBackground,
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(13, 14, 13, 20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _ReceiptAction(
-                                  icon: Icons.share_outlined,
-                                  label: 'Share',
-                                  busy: isProcessing,
-                                  onTap: () => runReceiptAction(
-                                    () => setState(() {}),
-                                    (bytes) async {
-                                      final result = await Share.shareXFiles(
-                                        [
-                                          XFile.fromData(
-                                            bytes,
-                                            mimeType: 'image/png',
+                                Center(
+                                  child: Image.asset(
+                                    AppAssets.transactionReceiptSuccess,
+                                    width: 82,
+                                    height: 82,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                const Center(
+                                  child: Text(
+                                    'Transaction Successful',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                const Center(
+                                  child: Text(
+                                    'Money has been sent',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                const Divider(height: 1),
+                                const SizedBox(height: 10),
+                                _ReceiptInfoRow(
+                                  label: 'Transaction ID',
+                                  value: '#515320532390',
+                                ),
+                                _ReceiptInfoRow(
+                                  label: 'Date & Time',
+                                  value: receiptDateTime,
+                                ),
+                                const _ReceiptInfoRow(
+                                  label: 'Funding Source',
+                                  value: 'easypaisa Account',
+                                ),
+                                const Divider(height: 24),
+                                const _ReceiptSectionTitle('Sent to'),
+                                _ReceiptInfoRow(label: 'Name', value: recipientName),
+                                _ReceiptInfoRow(
+                                  label: 'Raast IBAN',
+                                  value: recipientAccount
+                                          .trim()
+                                          .toUpperCase()
+                                          .startsWith('PK')
+                                      ? maskAccountNumber(recipientAccount)
+                                      : bankName ?? 'Not available',
+                                ),
+                                _ReceiptInfoRow(
+                                  label: 'Account Number',
+                                  value: recipientAccount,
+                                ),
+                                const Divider(height: 24),
+                                const _ReceiptSectionTitle('Sent by'),
+                                _ReceiptInfoRow(
+                                  label: 'Name',
+                                  value: profile.displayName,
+                                ),
+                                _ReceiptInfoRow(
+                                  label: 'Account Number',
+                                  value: profile.phoneNumber,
+                                ),
+                                const Divider(height: 24),
+                                const _ReceiptSectionTitle('Charges'),
+                                _ReceiptInfoRow(
+                                  label: 'Amount',
+                                  value: 'Rs. ${amount.toStringAsFixed(2)}',
+                                ),
+                                const _ReceiptInfoRow(
+                                  label: 'Fee',
+                                  value: 'Rs. 0.00',
+                                ),
+                                const Divider(height: 24),
+                                _ReceiptInfoRow(
+                                  label: 'Total Amount',
+                                  value: 'Rs. ${amount.toStringAsFixed(2)}',
+                                  isEmphasized: true,
+                                ),
+                                const SizedBox(height: 17),
+                                const Center(
+                                  child: Text.rich(
+                                    TextSpan(
+                                      text: 'Paid via  ',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      children: [
+                                        TextSpan(
+                                          text: 'easypaisa',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.textPrimary,
                                           ),
-                                        ],
-                                        subject:
-                                            'easypaisa Transaction Receipt',
-                                        fileNameOverrides: const [
-                                          'easypaisa_transaction_receipt.png',
-                                        ],
-                                      );
-                                      if (result.status ==
-                                          ShareResultStatus.success) {
-                                        showResultMessage(
-                                          'Receipt shared successfully.',
-                                        );
-                                      }
-                                    },
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                _ReceiptAction(
-                                  icon: Icons.photo_outlined,
-                                  label: 'Save to Photos',
-                                  busy: isProcessing,
-                                  onTap: () => runReceiptAction(
-                                    () => setState(() {}),
-                                    (bytes) async {
-                                      var hasAccess = await Gal.hasAccess();
-                                      if (!hasAccess) {
-                                        hasAccess = await Gal.requestAccess();
-                                      }
-                                      if (!hasAccess) {
-                                        throw StateError(
-                                          'Gallery permission was denied.',
-                                        );
-                                      }
-                                      await Gal.putImageBytes(
-                                        bytes,
-                                        name: 'easypaisa_transaction_receipt',
-                                      );
-                                      showResultMessage(
-                                        'Receipt saved to Photos.',
-                                      );
-                                    },
-                                  ),
-                                ),
-                                _ReceiptAction(
-                                  icon: Icons.picture_as_pdf_outlined,
-                                  label: 'Save as PDF',
-                                  busy: false,
-                                  onTap: () {},
                                 ),
                               ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        color: receiptBackground,
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(
+                                  pageContext,
+                                ).popUntil((route) => route.isFirst),
+                                style: OutlinedButton.styleFrom(
+                                  minimumSize: const Size(0, 38),
+                                  side: const BorderSide(
+                                    color: AppColors.brandGreen,
+                                    width: 1.3,
+                                  ),
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: const Text(
+                                  'Back to Home',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            _ReceiptRoundAction(
+                              icon: Icons.share_outlined,
+                              busy: isProcessing,
+                              onTap: () => runReceiptAction(
+                                () => setState(() {}),
+                                (bytes) async {
+                                  final result = await Share.shareXFiles(
+                                    [XFile.fromData(bytes, mimeType: 'image/png')],
+                                    subject: 'easypaisa Transaction Receipt',
+                                    fileNameOverrides: const [
+                                      'easypaisa_transaction_receipt.png',
+                                    ],
+                                  );
+                                  if (result.status == ShareResultStatus.success) {
+                                    showResultMessage('Receipt shared successfully.');
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            _ReceiptRoundAction(
+                              icon: Icons.download_outlined,
+                              busy: isProcessing,
+                              onTap: () => runReceiptAction(
+                                () => setState(() {}),
+                                (bytes) async {
+                                  var hasAccess = await Gal.hasAccess();
+                                  if (!hasAccess) hasAccess = await Gal.requestAccess();
+                                  if (!hasAccess) {
+                                    throw StateError('Gallery permission was denied.');
+                                  }
+                                  await Gal.putImageBytes(
+                                    bytes,
+                                    name: 'easypaisa_transaction_receipt',
+                                  );
+                                  showResultMessage('Receipt saved to Photos.');
+                                },
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      Positioned(
-                        right: 18,
-                        top: 14,
-                        child: IconButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(),
-                          icon: const Icon(Icons.close_rounded, size: 34),
-                        ),
-                      ),
                     ],
-                  ),
                 ),
               ),
             ),
           ),
         ),
-      );
-    },
+      ),
+    ),
   );
 }
 
-class _ReceiptAction extends StatelessWidget {
-  const _ReceiptAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.busy,
-  });
+class _ReceiptSectionTitle extends StatelessWidget {
+  const _ReceiptSectionTitle(this.title);
 
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool busy;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceiptInfoRow extends StatelessWidget {
+  const _ReceiptInfoRow({
+    required this.label,
+    required this.value,
+    this.isEmphasized = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isEmphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = TextStyle(
+      fontSize: 11,
+      fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w500,
+      color: AppColors.textPrimary,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            busy ? Icons.hourglass_top_rounded : icon,
-            size: 16,
-            color: AppColors.textPrimary,
+          Expanded(
+            child: Text(
+              label,
+              style: style.copyWith(
+                fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
           ),
-          const SizedBox(height: 14),
-          Text(
-            label,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF8D8D8D)),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: style,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReceiptRoundAction extends StatelessWidget {
+  const _ReceiptRoundAction({
+    required this.icon,
+    required this.busy,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool busy;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: busy ? null : onTap,
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.fromBorderSide(
+            BorderSide(color: AppColors.brandGreen, width: 1.3),
+          ),
+        ),
+        child: Icon(
+          busy ? Icons.hourglass_top_rounded : icon,
+          size: 19,
+          color: AppColors.textPrimary,
+        ),
       ),
     );
   }
@@ -6645,7 +6817,7 @@ class TransactionCard extends StatelessWidget {
         ? AppColors.brandGreen
         : AppColors.danger;
     return InkWell(
-      onTap: () => showReceiptDialog(
+      onTap: () => showReceiptScreen(
         context,
         amount: record.amount,
         bankName: record.bankName,
