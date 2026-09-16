@@ -5797,7 +5797,7 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen> {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12.6, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 12.6, 20, 12),
               child: Column(
                 children: [
                   const SizedBox(height: 0),
@@ -6099,8 +6099,13 @@ Future<void> showReceiptScreen(
                                         child: Text(
                                           'Money has been sent',
                                           style: TextStyle(
-                                            fontSize: 16.8,
-                                            color: AppColors.textSecondary,
+                                            fontSize: 18,
+                                            color: ui.Color.fromARGB(
+                                              255,
+                                              29,
+                                              28,
+                                              32,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -6175,8 +6180,13 @@ Future<void> showReceiptScreen(
                                           TextSpan(
                                             text: 'Paid via  ',
                                             style: TextStyle(
-                                              fontSize: 12,
-                                              color: AppColors.textSecondary,
+                                              fontSize: 13,
+                                              color: ui.Color.fromARGB(
+                                                255,
+                                                106,
+                                                104,
+                                                112,
+                                              ),
                                             ),
                                             children: [
                                               TextSpan(
@@ -6311,7 +6321,7 @@ class _ReceiptSectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 16.8,
+          fontSize: 20.0,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
@@ -6334,7 +6344,7 @@ class _ReceiptInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: 15.6,
+      fontSize: isEmphasized ? 20.97 : 15.6,
       fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w500,
       color: AppColors.textPrimary,
     );
