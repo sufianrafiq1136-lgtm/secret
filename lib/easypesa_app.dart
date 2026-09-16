@@ -109,6 +109,8 @@ class AppAssets {
   static const raastId = 'assets/logos/raast id.png';
   static const transactionReceiptSuccess =
       'assets/animation sample/transection receipt.jpeg';
+  static const transactionSuccess =
+      'assets/animation sample/transection succesfull.jpeg';
 }
 
 class ProfileAvatar extends StatelessWidget {
@@ -5663,31 +5665,12 @@ class TransferSuccessScreen extends StatefulWidget {
   State<TransferSuccessScreen> createState() => _TransferSuccessScreenState();
 }
 
-class _TransferSuccessScreenState extends State<TransferSuccessScreen>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _contentController;
-  late final Animation<double> _contentOpacity;
-  late final Animation<Offset> _contentSlide;
+class _TransferSuccessScreenState extends State<TransferSuccessScreen> {
   bool _transactionSaved = false;
 
   @override
   void initState() {
     super.initState();
-    _contentController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..forward();
-    _contentOpacity = CurvedAnimation(
-      parent: _contentController,
-      curve: const Interval(0.48, 1, curve: Curves.easeOut),
-    );
-    _contentSlide =
-        Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _contentController,
-            curve: const Interval(0.48, 1, curve: Curves.easeOutCubic),
-          ),
-        );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _persistTransaction();
     });
@@ -5782,15 +5765,19 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
   }
 
   @override
-  void dispose() {
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     void returnHome() {
       Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+
+    void openReceipt() {
+      showReceiptScreen(
+        context,
+        amount: widget.amount,
+        bankName: widget.bankName,
+        recipientName: widget.recipientName,
+        recipientAccount: widget.recipientAccount,
+      );
     }
 
     return PopScope<void>(
@@ -5799,275 +5786,165 @@ class _TransferSuccessScreenState extends State<TransferSuccessScreen>
         if (!didPop) returnHome();
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Stack(
-            alignment: Alignment.topCenter,
-            children: [
-              ListView(
-                padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+        backgroundColor: const Color(0xFFFEFFFF),
+        body: DecoratedBox(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFFBFEFD7), Color(0xFFFEFFFF)],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12.6, 20, 16),
+              child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        onPressed: returnHome,
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 38,
-                          color: Color(0xFFBBBBBB),
-                        ),
-                      ),
-                    ),
+                  const SizedBox(height: 0),
+                  Image.asset(
+                    AppAssets.transactionSuccess,
+                    width: 300,
+                    height: 250,
+                    fit: BoxFit.contain,
                   ),
-                  const SizedBox(height: 40),
-                  const Center(child: _SuccessBadge()),
-                  const SizedBox(height: 26),
-                  FadeTransition(
-                    opacity: _contentOpacity,
-                    child: SlideTransition(
-                      position: _contentSlide,
-                      child: Center(
-                        child: RichText(
-                          text: TextSpan(
-                            children: [
-                              WidgetSpan(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 22.0),
-                                  child: const Text(
-                                    'Rs ',
-                                    style: TextStyle(
-                                      fontFamily: 'Google Sans',
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w700,
-                                      color: Color.fromARGB(255, 14, 14, 15),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              TextSpan(
-                                text: widget.amount.toStringAsFixed(0),
-                                style: const TextStyle(
-                                  fontFamily: 'Google Sanssf',
-                                  fontSize: 52,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black,
-                                  height: 1,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: '.00',
-                                style: TextStyle(
-                                  fontFamily: 'Google Sans',
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  FadeTransition(
-                    opacity: _contentOpacity,
-                    child: SlideTransition(
-                      position: _contentSlide,
-                      child: const Center(
-                        child: Text(
-                          'Successfully Sent to',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: Color.fromARGB(255, 14, 14, 15),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(
-                            2,
-                          ), // Space between logo and border
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.brandGreen,
-                              width: 2,
-                            ),
-                          ),
-                          child: BankLogo(
-                            name: widget.bankName,
-                            asset: widget.logoAsset,
-                            fallbackColor: AppColors.brandGreen,
-                            size: 55,
-                            circle: true,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Center(
-                    child: Text(
-                      widget.recipientName,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: Color.fromARGB(255, 15, 14, 15),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      widget.recipientAccount,
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-
-                  // const SizedBox(height: 26),
-                  const SizedBox(height: 26),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 26),
-                    child: Text(
-                      'Important Details for you',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
+                  const Spacer(flex: 3),
+                  Text(
+                    'Rs. ${widget.amount.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 50,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      height: 1,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Container(height: 1, color: const Color(0xFFEDEDF1)),
-                  const SizedBox(height: 20),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 26),
-                    child: Text(
-                      "Money has been sent from easypaisa to receiver's bank account. To confirm check with the receiver",
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        height: 1.15,
-                      ),
+                  const Text(
+                    'Successfully Sent to',
+                    style: TextStyle(
+                      fontSize: 17.4,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  Container(
+                    width: 68.2,
+                    height: 68.2,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: BankLogo(
+                      name: widget.bankName,
+                      asset: widget.logoAsset,
+                      fallbackColor: AppColors.brandGreen,
+                      size: 37.4,
+                      circle: true,
                     ),
                   ),
                   const SizedBox(height: 18),
-                  _SuccessActionRow(
-                    icon: Icons.receipt_long_outlined,
-                    label: 'View Receipt',
-                    onTap: () => showReceiptScreen(
-                      context,
-                      amount: widget.amount,
-                      bankName: widget.bankName,
-                      recipientName: widget.recipientName,
-                      recipientAccount: widget.recipientAccount,
-                    ),
-                  ),
-                  _SuccessActionRow(
-                    icon: Icons.share_outlined,
-                    label: 'Share',
-                    onTap: () => showReceiptScreen(
-                      context,
-                      amount: widget.amount,
-                      bankName: widget.bankName,
-                      recipientName: widget.recipientName,
-                      recipientAccount: widget.recipientAccount,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Native version of the green success check shown after a transfer completes.
-/// The circle pops into place and the checkmark is drawn from left to right.
-class _SuccessBadge extends StatelessWidget {
-  const _SuccessBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 92,
-      height: 92,
-      decoration: const BoxDecoration(
-        color: AppColors.brandGreen,
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.check_rounded, color: Colors.white, size: 54),
-    );
-  }
-}
-
-class _SuccessActionRow extends StatelessWidget {
-  const _SuccessActionRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const Divider(height: 1, thickness: 1, color: Color(0xFFEDEDF1)),
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-            child: Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 29,
-                  color: const Color.fromARGB(255, 53, 52, 53),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Text(
-                    label,
+                  Text(
+                    widget.recipientName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 23,
+                      fontSize: 25,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 42,
-                  color: AppColors.textPrimary,
-                ),
-              ],
+                  const SizedBox(height: 7),
+                  Text(
+                    widget.recipientAccount,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 17.6,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const Spacer(flex: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: returnHome,
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46.2),
+                            side: const BorderSide(
+                              color: AppColors.brandGreen,
+                              width: 1.8,
+                            ),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: const Text(
+                            'Back to home',
+                            style: TextStyle(
+                              fontSize: 17.6,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      _TransferSuccessIconAction(
+                        icon: Icons.share_outlined,
+                        tooltip: 'Share receipt',
+                        onTap: openReceipt,
+                      ),
+                      const SizedBox(width: 20),
+                      _TransferSuccessIconAction(
+                        icon: Icons.receipt_long_outlined,
+                        tooltip: 'View receipt',
+                        onTap: openReceipt,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _TransferSuccessIconAction extends StatelessWidget {
+  const _TransferSuccessIconAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 46.2,
+          height: 46.2,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.fromBorderSide(
+              BorderSide(color: AppColors.brandGreen, width: 1.8),
+            ),
+          ),
+          child: Icon(icon, size: 24.2, color: AppColors.textPrimary),
+        ),
+      ),
     );
   }
 }
@@ -6103,6 +5980,7 @@ Future<void> showReceiptScreen(
 }) async {
   final receiptDateTime = _formatReceiptDateTime(DateTime.now());
   const receiptBackground = ui.Color.fromARGB(255, 255, 255, 255);
+  const receiptContentTopColor = ui.Color(0xFFE6F6EC);
   const receiptOuterBackground = ui.Color.fromARGB(255, 185, 229, 209);
   final profile = await resolveUserProfile();
   if (!context.mounted) return;
@@ -6168,13 +6046,19 @@ Future<void> showReceiptScreen(
             ),
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 30, 20, 0),
                 child: RepaintBoundary(
                   key: receiptKey,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(2),
                     child: Container(
-                      color: receiptBackground,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [receiptContentTopColor, receiptBackground],
+                        ),
+                      ),
                       child: SizedBox.expand(
                         child: Column(
                           children: [
@@ -6204,7 +6088,7 @@ Future<void> showReceiptScreen(
                                         child: Text(
                                           'Transaction Successful',
                                           style: TextStyle(
-                                            fontSize: 20,
+                                            fontSize: 26,
                                             fontWeight: FontWeight.w700,
                                             color: AppColors.textPrimary,
                                           ),
@@ -6215,7 +6099,7 @@ Future<void> showReceiptScreen(
                                         child: Text(
                                           'Money has been sent',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: 16.8,
                                             color: AppColors.textSecondary,
                                           ),
                                         ),
@@ -6291,7 +6175,7 @@ Future<void> showReceiptScreen(
                                           TextSpan(
                                             text: 'Paid via  ',
                                             style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 12,
                                               color: AppColors.textSecondary,
                                             ),
                                             children: [
@@ -6336,7 +6220,7 @@ Future<void> showReceiptScreen(
                                       child: const Text(
                                         'Back to Home',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 16.8,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.textPrimary,
                                         ),
@@ -6427,7 +6311,7 @@ class _ReceiptSectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 14,
+          fontSize: 16.8,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
@@ -6450,7 +6334,7 @@ class _ReceiptInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = TextStyle(
-      fontSize: 13,
+      fontSize: 15.6,
       fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w500,
       color: AppColors.textPrimary,
     );
