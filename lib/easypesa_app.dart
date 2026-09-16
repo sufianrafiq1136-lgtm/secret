@@ -1444,17 +1444,18 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 0.ui),
+            SizedBox(height: 22.ui),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.ui),
+              padding: EdgeInsets.symmetric(horizontal: 23.ui),
               child: GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 mainAxisSpacing: 14.ui,
-                crossAxisSpacing: 14.ui,
-                childAspectRatio: 0.94,
+                crossAxisSpacing: 7.ui,
+                // 5% taller, with the grid width retained.
+                childAspectRatio: 1.3459,
                 children: [
                   FeatureTile(
                     title: 'Send Money',
@@ -2754,7 +2755,7 @@ class FeatureTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16.ui),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 5.ui, vertical: 10.ui),
+          padding: EdgeInsets.symmetric(horizontal: 5.ui, vertical: 1.5.ui),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16.ui),
@@ -2766,25 +2767,34 @@ class FeatureTile extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              AssetOrIcon(
-                asset: asset,
-                fallbackIcon: fallbackIcon,
-                size: 54.ui * HomeScale.factor,
-                color: AppColors.textPrimary,
+              Align(
+                alignment: Alignment.center,
+                child: AssetOrIcon(
+                  asset: asset,
+                  fallbackIcon: fallbackIcon,
+                  // 5% smaller while the card height remains fixed.
+                  size: 71.82.ui * HomeScale.factor,
+                  color: AppColors.textPrimary,
+                ),
               ),
-              SizedBox(height: 4.ui),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                style: const TextStyle(
-                  fontSize: 11,
-                  height: 1.05,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF403B4C),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      height: 1.05,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF403B4C),
+                    ),
+                  ),
                 ),
               ),
             ],
