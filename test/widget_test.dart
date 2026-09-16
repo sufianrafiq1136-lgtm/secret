@@ -81,6 +81,20 @@ void main() {
     await tester.tap(find.byTooltip('Share receipt'));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Successful'), findsOneWidget);
+    for (final value in <String>[
+      '#515320532390',
+      'easypaisa Account',
+      '03191981267',
+      'Rs. 0.00',
+    ]) {
+      final text = tester.widget<Text>(find.text(value));
+      expect(text.textAlign, TextAlign.right);
+      expect(text.maxLines, 1);
+      expect(text.overflow, TextOverflow.ellipsis);
+    }
+    final transactionIdRight = tester.getRect(find.text('#515320532390')).right;
+    final feeRight = tester.getRect(find.text('Rs. 0.00')).right;
+    expect(transactionIdRight, feeRight);
 
     navigatorKey.currentState!.pop();
     await tester.pumpAndSettle();

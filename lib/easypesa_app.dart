@@ -6354,16 +6354,26 @@ class _ReceiptInfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
+            flex: 4,
             child: Text(
               label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: style.copyWith(
                 fontWeight: isEmphasized ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
           ),
           const SizedBox(width: 16),
-          Flexible(
-            child: Text(value, textAlign: TextAlign.right, style: style),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: style,
+            ),
           ),
         ],
       ),
