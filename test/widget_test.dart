@@ -81,6 +81,17 @@ void main() {
     await tester.tap(find.byTooltip('Share receipt'));
     await tester.pumpAndSettle();
     expect(find.text('Transaction Successful'), findsOneWidget);
+    expect(find.text('Paid with'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                AppAssets.transactionReceiptBottomLogo,
+      ),
+      findsOneWidget,
+    );
     for (final value in <String>[
       '#515320532390',
       'easypaisa Account',

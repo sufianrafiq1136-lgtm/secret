@@ -109,6 +109,8 @@ class AppAssets {
   static const raastId = 'assets/logos/raast id.png';
   static const transactionReceiptSuccess =
       'assets/animation sample/transection receipt.jpeg';
+  static const transactionReceiptBottomLogo =
+      'assets/animation sample/receipt logo for bottom.jpg';
   static const transactionSuccess =
       'assets/animation sample/transection succesfull.jpeg';
 }
@@ -6041,7 +6043,13 @@ Future<void> showReceiptScreen(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [receiptOuterBackground, receiptBackground],
+                colors: [
+                  receiptOuterBackground,
+                  receiptOuterBackground,
+                  receiptBackground,
+                  receiptBackground,
+                ],
+                stops: [0, 0.2, 0.5, 1],
               ),
             ),
             child: SafeArea(
@@ -6056,7 +6064,13 @@ Future<void> showReceiptScreen(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [receiptContentTopColor, receiptBackground],
+                          colors: [
+                            receiptContentTopColor,
+                            receiptContentTopColor,
+                            receiptBackground,
+                            receiptBackground,
+                          ],
+                          stops: [0, 0.2, 0.5, 1],
                         ),
                       ),
                       child: SizedBox.expand(
@@ -6175,29 +6189,38 @@ Future<void> showReceiptScreen(
                                         isEmphasized: true,
                                       ),
                                       const SizedBox(height: 17),
-                                      const Center(
-                                        child: Text.rich(
-                                          TextSpan(
-                                            text: 'Paid via  ',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: ui.Color.fromARGB(
-                                                255,
-                                                106,
-                                                104,
-                                                112,
-                                              ),
-                                            ),
-                                            children: [
-                                              TextSpan(
-                                                text: 'easypaisa',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.w800,
-                                                  color: AppColors.textPrimary,
+                                      Center(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            const Text(
+                                              'Paid with',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: ui.Color.fromARGB(
+                                                  255,
+                                                  106,
+                                                  104,
+                                                  112,
                                                 ),
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            ClipRect(
+                                              child: SizedBox(
+                                                width: 76,
+                                                height: 24,
+                                                child: Image.asset(
+                                                  AppAssets
+                                                      .transactionReceiptBottomLogo,
+                                                  fit: BoxFit.cover,
+                                                  alignment: Alignment.center,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
@@ -6321,7 +6344,7 @@ class _ReceiptSectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 20.0,
+          fontSize: 20.5,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
